@@ -5,6 +5,7 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
 import { useUpdateCantidad } from '@/features/carrito/hooks/useUpdateCantidad'
 import { useRemoveItem } from '@/features/carrito/hooks/useRemoveItem'
+import { useClearCarrito } from '@/features/carrito/hooks/useClearCarrito'
 import { CarritoItemRow } from '@/features/carrito/components/CarritoItemRow'
 import { CarritoVacio } from '@/features/carrito/components/CarritoVacio'
 import { Button } from '@/shared/components/ui/Button'
@@ -19,10 +20,9 @@ export function CarritoPage() {
   const getSubtotal = useCarritoStore((s) => s.getSubtotal)
   const getDescuentoTotal = useCarritoStore((s) => s.getDescuentoTotal)
   const getTotal = useCarritoStore((s) => s.getTotal)
-  const clearOptimistic = useCarritoStore((s) => s.clearOptimistic)
-
   const { updateCantidad } = useUpdateCantidad()
   const { remove } = useRemoveItem()
+  const { clear: clearCart, isClearing } = useClearCarrito()
 
   const totalItems = getTotalItems()
   const subtotal = getSubtotal()
@@ -80,11 +80,12 @@ export function CarritoPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={clearOptimistic}
+          onClick={clearCart}
+          disabled={isClearing}
           leftIcon={<Trash2 className="h-4 w-4" />}
           className="text-status-danger dark:text-status-danger-dark"
         >
-          Vaciar
+          {isClearing ? 'Vaciando…' : 'Vaciar'}
         </Button>
       </div>
 

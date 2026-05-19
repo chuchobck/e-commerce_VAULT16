@@ -62,8 +62,13 @@ export function CheckoutPage() {
   const direccionLabel = selectedDir ? `${selectedDir.alias} — ${selectedDir.direccion}` : undefined
 
   const handleDireccionContinue = useCallback(() => {
+    if (validationErrors.length > 0) {
+      // Force the warning back if it was dismissed so the user sees why
+      setDismissedWarning(false)
+      return
+    }
     nextStep()
-  }, [nextStep])
+  }, [nextStep, validationErrors.length])
 
   const handlePagoSuccess = useCallback(
     (metodo: 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA', idFactura: string) => {

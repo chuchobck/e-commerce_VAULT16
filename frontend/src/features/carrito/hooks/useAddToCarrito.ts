@@ -27,14 +27,21 @@ export function useAddToCarrito() {
 
     onMutate: async (_payload) => {
       await queryClient.cancelQueries({ queryKey: ['carrito'] })
-      const prev = queryClient.getQueryData(['carrito'])
-      return { prev }
+      const prev = queryClient.getQueryData<CarritoItemMapped[]>(['carrito'])
+      const prevStore = useCarritoStore.getState().items
+      return { prev, prevStore }
     },
 
     onError: (_err, _payload, context) => {
       if (context?.prev) {
         queryClient.setQueryData(['carrito'], context.prev)
       }
+      // Rollback Zustand store so phantom items don't stay in the drawer
+      if (context?.prevStore) {
+        setItems(context.prevStore)
+      }
+      // Re-sync from backend just in case (cheap GET /carrito)
+      queryClient.invalidateQueries({ queryKey: ['carrito'] })
       error('No pudimos agregar el producto')
     },
 
