@@ -13,6 +13,8 @@ const slides = [
     subtitulo: 'Primera entrega. Hoodies y tees con descuento.',
     cta: 'Ver drop',
     href: '/promociones',
+    img: 'https://i.pinimg.com/originals/96/30/01/963001c759fd8152b7a7fca86e1be36e.jpg',
+    imgAlt: 'Modelo con hoodie oscuro en entorno urbano',
   },
   {
     id: 2,
@@ -20,6 +22,8 @@ const slides = [
     subtitulo: 'Diseñado para la calle. Hecho en Quito.',
     cta: 'Explorar',
     href: '/catalogo',
+    img: 'https://i.pinimg.com/originals/39/aa/fd/39aafddd87f1f59321e465af7db5c0db.jpg',
+    imgAlt: 'Look streetwear urbano completo',
   },
   {
     id: 3,
@@ -27,174 +31,10 @@ const slides = [
     subtitulo: 'Pesos heavy, fits oversize, paleta sobria.',
     cta: 'Ver catálogo',
     href: '/catalogo',
+    img: 'https://rawlooks.com/app/uploads/2020/12/avant-garde-dark-fashion-editorial-by-tim-koeck-boris-bidjan-saberi-army-of-me-hannes-roether-dita-eyewear-29-1600x1067.jpg',
+    imgAlt: 'Outfit oversize temporada oscura editorial',
   },
 ] as const
-
-// ─── Procedural SVG Art (one per slide mood) ─────────────────────────────────
-
-function SlideArt1() {
-  return (
-    <svg viewBox="0 0 1280 500" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="hero-grad-1" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#181C1F" />
-          <stop offset="100%" stopColor="#1D4ED8" />
-        </linearGradient>
-      </defs>
-      <rect width="1280" height="500" fill="url(#hero-grad-1)" />
-      {/* Diagonal aggressive lines */}
-      {Array.from({ length: 12 }, (_, i) => (
-        <line
-          key={i}
-          x1={i * 120 - 100}
-          y1="0"
-          x2={i * 120 + 200}
-          y2="500"
-          stroke="#3B82F6"
-          strokeWidth={i % 3 === 0 ? 3 : 1}
-          opacity={0.15 + (i % 4) * 0.05}
-        />
-      ))}
-      {/* Angular shapes */}
-      <polygon points="800,50 950,200 700,200" fill="#60A5FA" opacity="0.08" />
-      <polygon points="900,100 1100,300 750,350" fill="#3B82F6" opacity="0.06" />
-      <polygon points="1050,0 1280,180 1280,0" fill="#2563EB" opacity="0.1" />
-      {/* Giant decorative text */}
-      <text
-        x="850"
-        y="420"
-        fontFamily="'JetBrains Mono', monospace"
-        fontSize="180"
-        fontWeight="700"
-        fill="#60A5FA"
-        opacity="0.06"
-        textAnchor="middle"
-      >
-        DROP/001
-      </text>
-    </svg>
-  )
-}
-
-function SlideArt2() {
-  return (
-    <svg viewBox="0 0 1280 500" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="hero-grad-2" x1="0" y1="0" x2="0.8" y2="1">
-          <stop offset="0%" stopColor="#0E1114" />
-          <stop offset="100%" stopColor="#1D3A6B" />
-        </linearGradient>
-        <radialGradient id="glow-2" cx="70%" cy="50%">
-          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="1280" height="500" fill="url(#hero-grad-2)" />
-      <rect width="1280" height="500" fill="url(#glow-2)" />
-      {/* Concentric circles — spatial vibe */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <circle
-          key={i}
-          cx="900"
-          cy="250"
-          r={60 + i * 50}
-          fill="none"
-          stroke="#60A5FA"
-          strokeWidth={i === 0 ? 2 : 1}
-          opacity={0.12 - i * 0.01}
-        />
-      ))}
-      {/* Orbital dots */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const angle = (i * 60 * Math.PI) / 180
-        const r = 180
-        return (
-          <circle
-            key={`dot-${i}`}
-            cx={900 + r * Math.cos(angle)}
-            cy={250 + r * Math.sin(angle)}
-            r="4"
-            fill="#3B82F6"
-            opacity="0.3"
-          />
-        )
-      })}
-      {/* Decorative text */}
-      <text
-        x="900"
-        y="300"
-        fontFamily="'JetBrains Mono', monospace"
-        fontSize="140"
-        fontWeight="700"
-        fill="#60A5FA"
-        opacity="0.05"
-        textAnchor="middle"
-      >
-        VAULT·16
-      </text>
-    </svg>
-  )
-}
-
-function SlideArt3() {
-  return (
-    <svg viewBox="0 0 1280 500" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="hero-grad-3" x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0%" stopColor="#181C1F" />
-          <stop offset="100%" stopColor="#252A2E" />
-        </linearGradient>
-        <pattern id="noise" width="4" height="4" patternUnits="userSpaceOnUse">
-          <rect width="1" height="1" x="0" y="0" fill="#60A5FA" opacity="0.15" />
-          <rect width="1" height="1" x="2" y="2" fill="#60A5FA" opacity="0.1" />
-          <rect width="1" height="1" x="3" y="1" fill="#3B82F6" opacity="0.08" />
-        </pattern>
-      </defs>
-      <rect width="1280" height="500" fill="url(#hero-grad-3)" />
-      <rect width="1280" height="500" fill="url(#noise)" />
-      {/* Static/glitch horizontal lines */}
-      {Array.from({ length: 20 }, (_, i) => (
-        <rect
-          key={i}
-          x={400 + (i % 5) * 80}
-          y={i * 25}
-          width={100 + (i % 3) * 60}
-          height="1"
-          fill="#60A5FA"
-          opacity={0.1 + (i % 4) * 0.03}
-        />
-      ))}
-      {/* Signal bars */}
-      {Array.from({ length: 5 }, (_, i) => (
-        <rect
-          key={`bar-${i}`}
-          x={950 + i * 18}
-          y={350 - i * 20}
-          width="10"
-          height={20 + i * 20}
-          fill="#3B82F6"
-          opacity="0.12"
-          rx="2"
-        />
-      ))}
-      {/* Decorative text */}
-      <text
-        x="850"
-        y="400"
-        fontFamily="'JetBrains Mono', monospace"
-        fontSize="160"
-        fontWeight="700"
-        fill="#60A5FA"
-        opacity="0.04"
-        textAnchor="middle"
-      >
-        ESTÁTICA
-      </text>
-    </svg>
-  )
-}
-
-const slideArts = [SlideArt1, SlideArt2, SlideArt3]
 
 // ─── HeroBanner Component ────────────────────────────────────────────────────
 
@@ -218,7 +58,6 @@ export function HeroBanner() {
   }, [paused, next])
 
   const slide = slides[current]
-  const ArtComponent = slideArts[current]
 
   return (
     <section
@@ -228,22 +67,30 @@ export function HeroBanner() {
       aria-label="Carrusel principal"
       role="region"
     >
-      {/* Slide background art */}
+      {/* Slide background image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: 'easeInOut' }}
+          transition={{ duration: 0.7, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
-          <ArtComponent />
+          <img
+            src={slide.img}
+            alt={slide.imgAlt}
+            className="w-full h-full object-cover object-center"
+            loading={current === 0 ? 'eager' : 'lazy'}
+            draggable={false}
+          />
         </motion.div>
       </AnimatePresence>
 
       {/* Gradient overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/10" />
+      {/* Bottom vignette */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
       {/* Text content (bottom-left) */}
       <AnimatePresence mode="wait">
@@ -272,11 +119,10 @@ export function HeroBanner() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation arrows (show on hover) */}
+      {/* Navigation arrows */}
       <button
         onClick={prev}
-        className="absolute left-3 top-1/2 -translate-y-1/2 z-raised p-2 rounded-full bg-black/30 text-white/70 hover:bg-black/50 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-fast hidden sm:flex items-center justify-center hover:opacity-100 focus-visible:opacity-100"
-        style={{ opacity: undefined }}
+        className="absolute left-3 top-1/2 -translate-y-1/2 z-raised p-2 rounded-full bg-black/30 text-white/70 hover:bg-black/60 hover:text-white transition-all duration-fast hidden sm:flex items-center justify-center"
         aria-label="Slide anterior"
         onFocus={() => setPaused(true)}
       >
@@ -284,7 +130,7 @@ export function HeroBanner() {
       </button>
       <button
         onClick={next}
-        className="absolute right-3 top-1/2 -translate-y-1/2 z-raised p-2 rounded-full bg-black/30 text-white/70 hover:bg-black/50 hover:text-white transition-all duration-fast hidden sm:flex items-center justify-center"
+        className="absolute right-3 top-1/2 -translate-y-1/2 z-raised p-2 rounded-full bg-black/30 text-white/70 hover:bg-black/60 hover:text-white transition-all duration-fast hidden sm:flex items-center justify-center"
         aria-label="Slide siguiente"
         onFocus={() => setPaused(true)}
       >
