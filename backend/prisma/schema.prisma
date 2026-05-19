@@ -1,0 +1,407 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ajuste_inventario {
+  id_ajuste      Int              @id(map: "pk_ajuste_inventario") @default(autoincrement())
+  id_empleado    Int
+  fecha_ajuste   DateTime         @default(now()) @db.Timestamp(6)
+  motivo         String           @db.VarChar(200)
+  estado         String           @default("PRO") @db.Char(3)
+  created_at     DateTime         @default(now()) @db.Timestamp(6)
+  updated_at     DateTime         @default(now()) @db.Timestamp(6)
+  empleado       empleado         @relation(fields: [id_empleado], references: [id_empleado], map: "fk_aji_empleado")
+  detalle_ajuste detalle_ajuste[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_log {
+  id_audit            BigInt               @id(map: "pk_audit_log") @default(autoincrement())
+  tabla               String               @db.VarChar(50)
+  id_registro         String               @db.VarChar(50)
+  accion              String               @db.Char(6)
+  payload_antes       Json?
+  payload_despues     Json?
+  id_usuario_bo       Int?
+  id_cliente          Int?
+  ip                  String?              @db.VarChar(45)
+  user_agent          String?              @db.VarChar(255)
+  fecha               DateTime             @default(now()) @db.Timestamp(6)
+  cliente             cliente?             @relation(fields: [id_cliente], references: [id_cliente], map: "fk_aud_cliente")
+  usuarios_backoffice usuarios_backoffice? @relation(fields: [id_usuario_bo], references: [id_usuario], map: "fk_aud_usuario")
+
+  @@index([fecha(sort: Desc)], map: "idx_audit_fecha")
+  @@index([tabla, id_registro, fecha(sort: Desc)], map: "idx_audit_tabla_registro")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model carrito {
+  id_carrito      Int               @id(map: "pk_carrito") @default(autoincrement())
+  id_cliente      Int               @unique(map: "uq_car_cliente")
+  fecha_creacion  DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @default(now()) @db.Timestamp(6)
+  cliente         cliente           @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_car_cliente")
+  carrito_detalle carrito_detalle[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model carrito_detalle {
+  id_carrito_det    Int               @id(map: "pk_carrito_detalle") @default(autoincrement())
+  id_carrito        Int
+  id_variante       Int
+  cantidad          Int
+  fecha_agregado    DateTime          @default(now()) @db.Timestamp(6)
+  carrito           carrito           @relation(fields: [id_carrito], references: [id_carrito], onDelete: Cascade, map: "fk_cad_carrito")
+  variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_cad_variante")
+
+  @@unique([id_carrito, id_variante], map: "uq_car_det_var")
+  @@index([id_variante], map: "idx_carrito_detalle_variante")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model categoria_producto {
+  id_categoria String     @id(map: "pk_categoria_producto") @db.Char(3)
+  nombre       String     @unique(map: "uq_cat_nombre") @db.VarChar(50)
+  descripcion  String?    @db.VarChar(200)
+  orden        Int        @default(0) @db.SmallInt
+  estado       String     @default("ACT") @db.Char(3)
+  created_at   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime   @default(now()) @db.Timestamp(6)
+  producto     producto[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model chat_mensaje {
+  id_mensaje              BigInt      @id(map: "pk_chat_mensaje") @default(autoincrement())
+  id_sesion               String      @db.Uuid
+  rol                     String      @db.VarChar(10)
+  contenido               String
+  productos_referenciados Json?
+  tokens_input            Int?
+  tokens_output           Int?
+  fecha                   DateTime    @default(now()) @db.Timestamp(6)
+  chat_sesion             chat_sesion @relation(fields: [id_sesion], references: [id_sesion], onDelete: Cascade, map: "fk_chm_sesion")
+
+  @@index([id_sesion, fecha], map: "idx_chat_mensaje_sesion")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model chat_sesion {
+  id_sesion            String         @id(map: "pk_chat_sesion") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_cliente           Int?
+  fecha_inicio         DateTime       @default(now()) @db.Timestamp(6)
+  fecha_ultimo_mensaje DateTime       @default(now()) @db.Timestamp(6)
+  user_agent           String?        @db.VarChar(255)
+  ip_origen            String?        @db.VarChar(45)
+  chat_mensaje         chat_mensaje[]
+  cliente              cliente?       @relation(fields: [id_cliente], references: [id_cliente], map: "fk_chs_cliente")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cliente {
+  id_cliente         Int                  @id(map: "pk_cliente") @default(autoincrement())
+  email              String               @unique(map: "uq_cli_email") @db.VarChar(100)
+  password_hash      String               @db.VarChar(255)
+  ruc_cedula         String               @unique(map: "uq_cli_ruc_cedula") @db.VarChar(13)
+  telefono           String?              @db.VarChar(20)
+  nombre1            String               @db.VarChar(40)
+  apellido1          String               @db.VarChar(40)
+  email_verificado   Boolean              @default(false)
+  estado             String               @default("ACT") @db.Char(3)
+  ultimo_login       DateTime?            @db.Timestamp(6)
+  created_at         DateTime             @default(now()) @db.Timestamp(6)
+  updated_at         DateTime             @default(now()) @db.Timestamp(6)
+  audit_log          audit_log[]
+  carrito            carrito?
+  chat_sesion        chat_sesion[]
+  direccion_cliente  direccion_cliente[]
+  factura            factura[]
+  token_recuperacion token_recuperacion[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model detalle_ajuste {
+  id_det_ajuste     Int               @id(map: "pk_detalle_ajuste") @default(autoincrement())
+  id_ajuste         Int
+  id_variante       Int
+  cantidad          Int
+  tipo_movimiento   String            @db.Char(3)
+  ajuste_inventario ajuste_inventario @relation(fields: [id_ajuste], references: [id_ajuste], onDelete: Cascade, map: "fk_dad_ajuste")
+  variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_dad_variante")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model detalle_factura {
+  id_factura        String            @db.VarChar(15)
+  id_variante       Int
+  cantidad          Int
+  precio_unitario   Decimal           @db.Decimal(14, 3)
+  descuento_item    Decimal           @default(0) @db.Decimal(14, 3)
+  subtotal_linea    Decimal?          @default(dbgenerated("(((cantidad)::numeric * precio_unitario) - descuento_item)")) @db.Decimal(14, 3)
+  factura           factura           @relation(fields: [id_factura], references: [id_factura], onDelete: Cascade, map: "fk_dfa_factura")
+  variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_dfa_variante")
+
+  @@id([id_factura, id_variante], map: "pk_detalle_factura")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model direccion_cliente {
+  id_direccion        Int       @id(map: "pk_direccion_cliente") @default(autoincrement())
+  id_cliente          Int
+  alias               String    @db.VarChar(30)
+  nombre_destinatario String    @db.VarChar(80)
+  telefono_contacto   String    @db.VarChar(20)
+  provincia           String    @db.VarChar(50)
+  ciudad              String    @db.VarChar(50)
+  direccion           String    @db.VarChar(200)
+  referencia          String?   @db.VarChar(200)
+  codigo_postal       String?   @db.VarChar(10)
+  es_principal        Boolean   @default(false)
+  activa              Boolean   @default(true)
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  cliente             cliente   @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_dir_cliente")
+  factura             factura[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model empleado {
+  id_empleado         Int                  @id(map: "pk_empleado") @default(autoincrement())
+  cedula              String               @unique(map: "uq_emp_cedula") @db.VarChar(13)
+  nombre1             String               @db.VarChar(40)
+  apellido1           String               @db.VarChar(40)
+  telefono            String?              @db.VarChar(20)
+  estado_emp          String               @default("ACT") @db.Char(3)
+  created_at          DateTime             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime             @default(now()) @db.Timestamp(6)
+  ajuste_inventario   ajuste_inventario[]
+  factura             factura[]
+  movimiento_stock    movimiento_stock[]
+  usuarios_backoffice usuarios_backoffice?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model factura {
+  id_factura         String             @id(map: "pk_factura") @db.VarChar(15)
+  id_cliente         Int
+  id_empleado        Int?
+  id_direccion_envio Int?
+  subtotal           Decimal            @default(0) @db.Decimal(14, 3)
+  descuento_total    Decimal            @default(0) @db.Decimal(14, 3)
+  total              Decimal            @default(0) @db.Decimal(14, 3)
+  fecha_emision      DateTime           @default(now()) @db.Timestamp(6)
+  estado             String             @default("EMI") @db.Char(3)
+  created_at         DateTime           @default(now()) @db.Timestamp(6)
+  updated_at         DateTime           @default(now()) @db.Timestamp(6)
+  detalle_factura    detalle_factura[]
+  cliente            cliente            @relation(fields: [id_cliente], references: [id_cliente], map: "fk_fac_cliente")
+  direccion_cliente  direccion_cliente? @relation(fields: [id_direccion_envio], references: [id_direccion], onDelete: Restrict, map: "fk_fac_direccion")
+  empleado           empleado?          @relation(fields: [id_empleado], references: [id_empleado], map: "fk_fac_empleado")
+  pago               pago[]
+
+  @@index([id_cliente, fecha_emision(sort: Desc)], map: "idx_factura_cliente_fecha")
+  @@index([estado, fecha_emision(sort: Desc)], map: "idx_factura_estado")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model movimiento_stock {
+  id_movimiento     BigInt            @id(map: "pk_movimiento_stock") @default(autoincrement())
+  id_variante       Int
+  tipo              String            @db.Char(3)
+  cantidad          Int
+  referencia        String?           @db.VarChar(20)
+  saldo_post        Int
+  fecha             DateTime          @default(now()) @db.Timestamp(6)
+  observacion       String?           @db.VarChar(200)
+  id_empleado       Int?
+  empleado          empleado?         @relation(fields: [id_empleado], references: [id_empleado], map: "fk_mst_empleado")
+  variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_mst_variante")
+
+  @@index([id_variante, fecha(sort: Desc)], map: "idx_movimiento_variante_fecha")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pago {
+  id_pago            Int      @id(map: "pk_pago") @default(autoincrement())
+  id_factura         String   @db.VarChar(15)
+  metodo             String   @db.VarChar(20)
+  monto              Decimal  @db.Decimal(14, 3)
+  referencia_externa String?  @db.VarChar(100)
+  estado             String   @default("PEN") @db.Char(3)
+  fecha              DateTime @default(now()) @db.Timestamp(6)
+  created_at         DateTime @default(now()) @db.Timestamp(6)
+  factura            factura  @relation(fields: [id_factura], references: [id_factura], map: "fk_pago_factura")
+
+  @@index([id_factura], map: "idx_pago_factura")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model producto {
+  id_producto        String              @id(map: "pk_producto") @default(dbgenerated("('P'::text || lpad((nextval('seq_producto'::regclass))::text, 6, '0'::text))")) @db.VarChar(7)
+  id_categoria       String              @db.Char(3)
+  nombre             String              @unique(map: "uq_pro_nombre") @db.VarChar(80)
+  descripcion_corta  String?             @db.VarChar(200)
+  precio_venta       Decimal             @default(0.00) @db.Decimal(10, 2)
+  estado_prod        String              @default("ACT") @db.Char(3)
+  created_at         DateTime            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime            @default(now()) @db.Timestamp(6)
+  categoria_producto categoria_producto  @relation(fields: [id_categoria], references: [id_categoria], map: "fk_pro_categoria")
+  producto_ai        producto_ai?
+  producto_fotos     producto_fotos[]
+  promocion_detalle  promocion_detalle[]
+  variante_producto  variante_producto[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model producto_ai {
+  id_producto       String                 @id(map: "pk_producto_ai") @db.VarChar(7)
+  descripcion_larga String
+  bullet_points     Json?
+  tags_estilo       Json?
+  embedding         Unsupported("vector")?
+  modelo_generacion String                 @db.VarChar(50)
+  modelo_embedding  String                 @db.VarChar(50)
+  fecha_generacion  DateTime               @default(now()) @db.Timestamp(6)
+  version           Int                    @default(1)
+  producto          producto               @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_pai_producto")
+
+  @@index([embedding], map: "idx_producto_ai_embedding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model producto_fotos {
+  id_foto      Int      @id(map: "pk_producto_fotos") @default(autoincrement())
+  id_producto  String   @db.VarChar(7)
+  url_foto     String
+  alt_text     String?  @db.VarChar(150)
+  es_principal Boolean  @default(false)
+  orden        Int      @default(1)
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  producto     producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_foto_producto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model promocion {
+  id_promocion         Int                 @id(map: "pk_promocion") @default(autoincrement())
+  nombre               String              @db.VarChar(100)
+  descripcion          String?
+  porcentaje_descuento Decimal?            @db.Decimal(5, 2)
+  fecha_inicio         DateTime            @db.Timestamp(6)
+  fecha_fin            DateTime            @db.Timestamp(6)
+  estado               String              @default("ACT") @db.Char(3)
+  created_at           DateTime            @default(now()) @db.Timestamp(6)
+  updated_at           DateTime            @default(now()) @db.Timestamp(6)
+  promocion_detalle    promocion_detalle[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model promocion_detalle {
+  id_prom_detalle Int       @id(map: "pk_promocion_detalle") @default(autoincrement())
+  id_promocion    Int
+  id_producto     String    @db.VarChar(7)
+  producto        producto  @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_prd_producto")
+  promocion       promocion @relation(fields: [id_promocion], references: [id_promocion], onDelete: Cascade, map: "fk_prd_promocion")
+
+  @@unique([id_promocion, id_producto], map: "uq_prom_producto")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model rol {
+  id_rol              Int                   @id(map: "pk_rol") @default(autoincrement())
+  nombre              String                @unique(map: "uq_rol_nombre") @db.VarChar(50)
+  descripcion         String?               @db.VarChar(200)
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  usuarios_backoffice usuarios_backoffice[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model talla {
+  id_talla          Int                 @id(map: "pk_talla") @default(autoincrement())
+  descripcion       String              @unique(map: "uq_tal_desc") @db.VarChar(10)
+  orden             Int                 @default(0) @db.SmallInt
+  estado            String              @default("ACT") @db.Char(3)
+  created_at        DateTime            @default(now()) @db.Timestamp(6)
+  updated_at        DateTime            @default(now()) @db.Timestamp(6)
+  variante_producto variante_producto[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model token_recuperacion {
+  id_token   String   @id(map: "pk_token_recuperacion") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_cliente Int
+  tipo       String   @db.VarChar(20)
+  expira     DateTime @db.Timestamp(6)
+  usado      Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  cliente    cliente  @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_tok_cliente")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model usuarios_backoffice {
+  id_usuario    Int         @id(map: "pk_usuarios_backoffice") @default(autoincrement())
+  email         String      @unique(map: "uq_ubo_email") @db.VarChar(100)
+  password_hash String      @db.VarChar(255)
+  id_rol        Int
+  id_empleado   Int         @unique(map: "uq_ubo_empleado")
+  ultimo_login  DateTime?   @db.Timestamp(6)
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime    @default(now()) @db.Timestamp(6)
+  audit_log     audit_log[]
+  empleado      empleado    @relation(fields: [id_empleado], references: [id_empleado], onDelete: Cascade, map: "fk_ubo_empleado")
+  rol           rol         @relation(fields: [id_rol], references: [id_rol], map: "fk_ubo_rol")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model variante_producto {
+  id_variante       Int                @id(map: "pk_variante_producto") @default(autoincrement())
+  id_producto       String             @db.VarChar(7)
+  id_talla          Int
+  color             String             @db.VarChar(30)
+  sku               String             @unique(map: "uq_var_sku") @db.VarChar(50)
+  var_saldo_inicial Int                @default(0)
+  var_qty_ingresos  Int                @default(0)
+  var_qty_egresos   Int                @default(0)
+  var_qty_ajustes   Int                @default(0)
+  var_saldo_final   Int?               @default(dbgenerated("(((var_saldo_inicial + var_qty_ingresos) - var_qty_egresos) + var_qty_ajustes)"))
+  created_at        DateTime           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime           @default(now()) @db.Timestamp(6)
+  carrito_detalle   carrito_detalle[]
+  detalle_ajuste    detalle_ajuste[]
+  detalle_factura   detalle_factura[]
+  movimiento_stock  movimiento_stock[]
+  producto          producto           @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_var_producto")
+  talla             talla              @relation(fields: [id_talla], references: [id_talla], map: "fk_var_talla")
+
+  @@unique([id_producto, id_talla, color], map: "uq_var_combinacion")
+  @@index([id_producto], map: "idx_variante_producto")
+}
