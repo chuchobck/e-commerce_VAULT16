@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:pull": "prisma db pull",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "check:contracts": "NODE_PATH=./node_modules tsx ../tools/contract-check/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
