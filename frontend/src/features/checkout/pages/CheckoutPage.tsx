@@ -33,7 +33,9 @@ export function CheckoutPage() {
   const commitDireccion = () =>
     direccionRef.current ? direccionRef.current.commit() : Promise.resolve(null)
 
-  const [tab, setTab] = useState<PagoTab>(PAYPAL_AVAILABLE ? 'PAYPAL' : 'TARJETA')
+  // Default tab: TARJETA so the global "Pagar $XX.XX" button is visible inmediato
+  // para el flujo común (3 clicks). PayPal queda como alternativa en su propia tab.
+  const [tab, setTab] = useState<PagoTab>('TARJETA')
   const [validationErrors, setValidationErrors] = useState<CheckoutValidacion['errors']>([])
   const [dismissedWarning, setDismissedWarning] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -167,7 +169,7 @@ export function CheckoutPage() {
           />
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 lg:self-start">
           <ResumenOrden direccionLabel={direccionLabel} />
         </div>
       </div>
