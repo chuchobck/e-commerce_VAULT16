@@ -167,6 +167,17 @@ export function SizeCalculatorModal({
     return null
   }, [tipo, pecho, cintura, cadera])
 
+  // Per-input out-of-range flag: tiene texto pero no está en [50,150]
+  const isOutOfRange = useCallback((raw: string) => {
+    if (raw === '') return false
+    const n = Number(raw)
+    return !Number.isFinite(n) || n < 50 || n > 150
+  }, [])
+
+  const pechoOutOfRange = useMemo(() => isOutOfRange(pecho), [pecho, isOutOfRange])
+  const cinturaOutOfRange = useMemo(() => isOutOfRange(cintura), [cintura, isOutOfRange])
+  const caderaOutOfRange = useMemo(() => isOutOfRange(cadera), [cadera, isOutOfRange])
+
   // Validate inputs
   const isValid = useMemo(() => {
     if (tipo === 'top') {
@@ -293,14 +304,25 @@ export function SizeCalculatorModal({
                       <label className="text-xs text-text-secondary dark:text-text-secondary-dark mb-1 block">Pecho</label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="50"
                         max="150"
                         value={pecho}
                         onChange={(e) => setPecho(e.target.value)}
                         placeholder="ej: 98"
-                        className="w-full h-10 px-3 rounded-md text-sm border border-border-base dark:border-border-base-dark bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent"
+                        className={`w-full h-10 px-3 rounded-md text-sm border bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${
+                          pechoOutOfRange
+                            ? 'border-status-danger'
+                            : 'border-border-base dark:border-border-base-dark'
+                        }`}
                         aria-label="Medida de pecho en centímetros"
+                        aria-invalid={pechoOutOfRange || undefined}
                       />
+                      {pechoOutOfRange && (
+                        <p className="mt-1 text-xs text-status-danger">
+                          Ingresá un valor entre 50 y 150 cm
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -308,27 +330,49 @@ export function SizeCalculatorModal({
                         <label className="text-xs text-text-secondary dark:text-text-secondary-dark mb-1 block">Cintura</label>
                         <input
                           type="number"
+                          inputMode="numeric"
                           min="50"
                           max="150"
                           value={cintura}
                           onChange={(e) => setCintura(e.target.value)}
                           placeholder="ej: 85"
-                          className="w-full h-10 px-3 rounded-md text-sm border border-border-base dark:border-border-base-dark bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent"
+                          className={`w-full h-10 px-3 rounded-md text-sm border bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${
+                            cinturaOutOfRange
+                              ? 'border-status-danger'
+                              : 'border-border-base dark:border-border-base-dark'
+                          }`}
                           aria-label="Medida de cintura en centímetros"
+                          aria-invalid={cinturaOutOfRange || undefined}
                         />
+                        {cinturaOutOfRange && (
+                          <p className="mt-1 text-xs text-status-danger">
+                            Ingresá un valor entre 50 y 150 cm
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs text-text-secondary dark:text-text-secondary-dark mb-1 block">Cadera</label>
                         <input
                           type="number"
+                          inputMode="numeric"
                           min="50"
                           max="150"
                           value={cadera}
                           onChange={(e) => setCadera(e.target.value)}
                           placeholder="ej: 100"
-                          className="w-full h-10 px-3 rounded-md text-sm border border-border-base dark:border-border-base-dark bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent"
+                          className={`w-full h-10 px-3 rounded-md text-sm border bg-bg-base dark:bg-bg-hover-dark text-text-primary dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${
+                            caderaOutOfRange
+                              ? 'border-status-danger'
+                              : 'border-border-base dark:border-border-base-dark'
+                          }`}
                           aria-label="Medida de cadera en centímetros"
+                          aria-invalid={caderaOutOfRange || undefined}
                         />
+                        {caderaOutOfRange && (
+                          <p className="mt-1 text-xs text-status-danger">
+                            Ingresá un valor entre 50 y 150 cm
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
