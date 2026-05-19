@@ -1,0 +1,46 @@
+El sistema implementa dos modalidades de pago en el canal web (canal `WEB`):
+
+1. **PayPal — integración real.** Se usa la REST Orders API v2 de PayPal con intención `CAPTURE`. El flujo es: creación de orden en PayPal → aprobación interactiva por el usuario a través del componente `<PayPalButtons>` de la SDK oficial → captura sincrónica del pago desde el backend → creación de factura en BD vía stored procedure. No hay redirección de página: todo ocurre dentro del componente embebido, con el callback `onApprove`. No se implementa 3DS propio ni OTP propio; esa responsabilidad recae en PayPal. La moneda es **USD**. El modo configurado es `sandbox` (desarrollo). El país de la tienda es Ecuador; el IVA aplicable se obtiene dinámicamente de la tabla `iva` (15 %).
+
+2. **Tarjeta — simulación visual sin pasarela real.** El frontend recopila datos de la tarjeta (número, nombre, expiración, CVV) únicamente para visualización. Ningún dato de tarjeta se envía al backend. La llamada resultante es idéntica a un checkout directo por método de pago `id_metodo_pago: 2` (identificado como "tarjeta de crédito" en BD), que crea la factura en BD sin verificación de fondos.
+
+No existe tokenización de tarjetas, suscripciones recurrentes ni captura diferida (pre-autorización + captura posterior).
+
+---
+
+## 2. Stack de pagos
+
+| Componente          | Tecnología                       | Versión      | Archivo donde se inicializa                                                      |
+|---------------------|----------------------------------|--------------|----------------------------------------------------------------------------------|
+| SDK PayPal frontend | @paypal/react-paypal-js          | ^8.9.2       | `E-commerce-fronted/barbox-frontend/src/App.tsx` (PayPalScriptProvider)          |
+| Botones PayPal UI   | PayPalButtons (del mismo SDK)    | ^8.9.2       | `E-commerce-fronted/barbox-frontend/src/pages/CheckoutPage.tsx`                  |
+| Cliente HTTP PayPal (backend) | fetch nativo de Node | —            | `Clase 9 backend/src/config/paypal.js` (getPayPalAccessToken)                   |
+| Configuración PayPal (backend) | paypalConfig (módulo propio) | — | `Clase 9 backend/src/config/paypal.js`                                          |
+| Cliente HTTP backend→frontend | fetch nativo de Node | —       | `Clase 9 backend/src/controllers/paypal.controller.js`                           |
+| Cliente HTTP frontend→backend | axios                | ^1.13.2      | `E-commerce-fronted/barbox-frontend/src/services/api.ts`                         |
+| Servicio de checkout frontend | checkoutService (módulo propio) | — | `E-commerce-fronted/barbox-frontend/src/services/checkout.service.ts`           |
+| Stored procedure de factura | fn_ingresar_factura (PostgreSQL) | — | `Clase 9 backend/src/controllers/factura.controller.js` y `paypal.controller.js` |
+| Validación de parámetros | validación manual en controlador | — | `Clase 9 backend/src/controllers/paypal.controller.js`                           |
+| Verificador de firma webhook | No implementado              | —            | —                                                                                |
+
+---
+
+## 3. Variables de entorno requeridas
+
+### Backend (`Clase 9 backend/.env.example`)
+
+| Variable               | Propósito                                                      | Módulo   | Ejemplo de formato                          |
+|------------------------|----------------------------------------------------------------|----------|---------------------------------------------|
+| `PAYPAL_CLIENT_ID`     | Autenticar llamadas a la API REST de PayPal (client credentials)| backend  | `AxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxEK` |
+| `PAYPAL_CLIENT_SECRET` | Parte del par de credenciales client_credentials              | backend  | `Exxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
+| `PAYPAL_MODE`          | Seleccionar entorno: `sandbox` o `live`                       | backend  | `sandbox`                                   |
+| `FRONTEND_URL`         | URL de retorno tras aprobación/cancelación en PayPal (`return_url` / `cancel_url`) | backend | `https://tu-app.vercel.app` |
+| `JWT_SECRET`           | Firmar/verificar el token Bearer enviado en cada request de pago | backend | `<64 hex chars>` |
+| `DATABASE_URL`         | Conexión a PostgreSQL para fn_ingresar_factura                 | backend  | `postgresql://user:pass@host:6543/db?pgbouncer=true` |
+
+### Frontend (`E-commerce-fronted/barbox-frontend/.env.example`)
+
+| Variable                     | Propósito                                                   | Módulo   | Ejemplo de formato               |
+|------------------------------|-------------------------------------------------------------|----------|----------------------------------|
+| `REACT_APP_PAYPAL_CLIENT_ID` | Client ID que se pasa a `PayPalScriptProvider` en el navegador | frontend | `AS6D0zcP...` (sandbox) o `live client id` |
+| `REACT_APP_API_URL`          | Base URL del backend para las llamadas de checkout          | frontend | `http://localhost:3000/api/v1`   |
