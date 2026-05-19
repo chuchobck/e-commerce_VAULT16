@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
-import { Loader2, CreditCard, Building2, ChevronLeft, AlertCircle, Info, CheckCircle2 } from 'lucide-react'
+import { Loader2, CreditCard, ChevronLeft, AlertCircle, Info } from 'lucide-react'
 import {
   iniciarPago,
   capturarPayPal,
   confirmarTarjetaSimulada,
   type MetodoPago,
-  type IniciarPagoResponse,
 } from '@/features/checkout/api/checkoutApi'
 
 interface PagoStepProps {
@@ -17,14 +16,13 @@ interface PagoStepProps {
   onBack: () => void
 }
 
-type Tab = 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA'
+type Tab = 'PAYPAL' | 'TARJETA'
 
 const PAYPAL_AVAILABLE = !!import.meta.env.VITE_PAYPAL_CLIENT_ID
 
 export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
   const [tab, setTab] = useState<Tab>(PAYPAL_AVAILABLE ? 'PAYPAL' : 'TARJETA')
   const [error, setError] = useState<string | null>(null)
-  const [transferencia, setTransferencia] = useState<IniciarPagoResponse | null>(null)
 
   // PayPal SDK status (for nicer fallback messaging)
   const [{ isPending, isRejected }] = usePayPalScriptReducer()
@@ -47,16 +45,6 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
     mutationFn: () => confirmarTarjetaSimulada({ id_direccion_envio: direccionId }),
     onSuccess: (data) => onSuccess('TARJETA', data.id_factura),
     onError: (e: Error) => setError(e.message || 'Error procesando tarjeta'),
-  })
-
-  // ─── Transferencia ──────────────────────────────────────────────────────
-  const transferenciaMutation = useMutation({
-    mutationFn: () =>
-      iniciarPago({ id_direccion_envio: direccionId, metodo_pago: 'TRANSFERENCIA' }),
-    onSuccess: (data) => {
-      setTransferencia(data)
-    },
-    onError: (e: Error) => setError(e.message || 'Error generando orden de transferencia'),
   })
 
   const [card, setCard] = useState({ numero: '', titular: '', exp: '', cvv: '' })
@@ -93,7 +81,6 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
           onClick={() => {
             setTab('PAYPAL')
             setError(null)
-            setTransferencia(null)
           }}
           icon={<PayPalLogoMark />}
           label="PayPal"
@@ -103,19 +90,9 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
           onClick={() => {
             setTab('TARJETA')
             setError(null)
-            setTransferencia(null)
           }}
           icon={<CreditCard className="h-4 w-4" />}
           label="Tarjeta"
-        />
-        <TabButton
-          active={tab === 'TRANSFERENCIA'}
-          onClick={() => {
-            setTab('TRANSFERENCIA')
-            setError(null)
-          }}
-          icon={<Building2 className="h-4 w-4" />}
-          label="Transferencia"
         />
       </div>
 
@@ -141,7 +118,7 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
             <div className="p-3 rounded border border-status-warning dark:border-status-warning-dark bg-status-warning-bg dark:bg-status-warning-bg-dark text-sm text-status-warning dark:text-status-warning-dark flex items-start gap-2">
               <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <span>
-                PayPal no está configurado en este entorno. Usa Tarjeta o Transferencia.
+                PayPal no está configurado en este entorno. Usa Tarjeta simulada para finalizar el pedido.
               </span>
             </div>
           )}
@@ -154,7 +131,7 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
 
           {PAYPAL_AVAILABLE && isRejected && (
             <div className="p-3 rounded border border-status-danger dark:border-status-danger-dark bg-status-danger-bg dark:bg-status-danger-bg-dark text-sm text-status-danger dark:text-status-danger-dark">
-              No se pudo cargar el SDK de PayPal. Intenta recargar la página o elige otro método.
+              No se pudo cargar el SDK de PayPal. Intenta recargar la página o elige Tarjeta.
             </div>
           )}
 
@@ -168,7 +145,7 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
                   const result = await createOrderMutation.mutateAsync()
                   if (result.paypal_stub) {
                     setError(
-                      'PayPal no está configurado en el servidor (modo demo). Usa Tarjeta o Transferencia para finalizar el pedido.',
+                      'PayPal no está configurado en el servidor (modo demo). Usa Tarjeta simulada para finalizar el pedido.',
                     )
                     throw new Error('PayPal en modo stub — backend sin credenciales')
                   }
@@ -255,55 +232,6 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
           </button>
         </form>
       )}
-
-      {/* ─── Transferencia ───────────────────────────────────────────── */}
-      {tab === 'TRANSFERENCIA' && (
-        <div className="space-y-4 max-w-md">
-          {!transferencia ? (
-            <>
-              <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
-                Generamos una orden con estado pendiente. Recibirás los datos bancarios para realizar la transferencia.
-              </p>
-              <button
-                type="button"
-                onClick={() => transferenciaMutation.mutate()}
-                disabled={transferenciaMutation.isPending}
-                className="w-full py-2.5 rounded border border-text-primary dark:border-text-primary-dark text-text-primary dark:text-text-primary-dark text-sm font-medium hover:bg-bg-hover dark:hover:bg-bg-hover-dark disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {transferenciaMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Generando orden…
-                  </>
-                ) : (
-                  'Generar orden de transferencia'
-                )}
-              </button>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-status-success dark:text-status-success-dark">
-                <CheckCircle2 className="h-4 w-4" /> Orden creada
-              </div>
-              {transferencia.instrucciones_transferencia && (
-                <div className="p-4 rounded border border-border-base dark:border-border-base-dark space-y-1.5 text-sm">
-                  <Row k="Banco" v={transferencia.instrucciones_transferencia.banco} />
-                  <Row k="Cuenta" v={`${transferencia.instrucciones_transferencia.tipo} ${transferencia.instrucciones_transferencia.cuenta}`} />
-                  <Row k="Beneficiario" v={transferencia.instrucciones_transferencia.beneficiario} />
-                  <Row k="RUC" v={transferencia.instrucciones_transferencia.ruc} />
-                  <Row k="Referencia" v={transferencia.instrucciones_transferencia.referencia} />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => transferencia.id_factura && onSuccess('TRANSFERENCIA', transferencia.id_factura)}
-                className="w-full py-2.5 rounded bg-text-primary dark:bg-text-primary-dark text-bg-base dark:text-bg-base-dark text-sm font-medium hover:opacity-90"
-              >
-                Ver confirmación de pedido
-              </button>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
@@ -366,15 +294,6 @@ function Field({
         className="w-full px-3 py-2 rounded border border-border-base dark:border-border-base-dark bg-bg-base dark:bg-bg-base-dark text-sm text-text-primary dark:text-text-primary-dark focus:outline-none focus:border-text-primary dark:focus:border-text-primary-dark"
       />
     </label>
-  )
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-text-muted dark:text-text-muted-dark">{k}</span>
-      <span className="text-text-primary dark:text-text-primary-dark font-medium">{v}</span>
-    </div>
   )
 }
 

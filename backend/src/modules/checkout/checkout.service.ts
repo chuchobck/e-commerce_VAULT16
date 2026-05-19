@@ -390,12 +390,21 @@ export async function capturarPayPal(idCliente: number, data: CapturarPayPalInpu
 
   const captura = await captureOrder(data.paypal_order_id);
 
+  // ── Fail-closed: rechazar capturas en modo stub para no marcar facturas
+  //    como pagadas sin confirmación real de PayPal. La única alternativa
+  //    sin credenciales es Tarjeta simulada (endpoint separado).
+  if (captura.stub) {
+    throw new ConflictError(
+      'PayPal en modo demo (sin credenciales) — captura rechazada. Usa Tarjeta simulada.',
+    );
+  }
+
   if (captura.status !== 'COMPLETED') {
     throw new ConflictError(`Pago PayPal no completado (status: ${captura.status})`);
   }
 
-  // ── Verificaciones de integridad (fail-closed en modo real) ───────────
-  if (!captura.stub) {
+  // ── Verificaciones de integridad (fail-closed) ────────────────────────
+  {
     if (!captura.currencyCode || captura.currencyCode !== 'USD') {
       throw new ConflictError(
         `Moneda PayPal inválida o ausente: ${captura.currencyCode ?? 'null'} (esperado USD)`,
@@ -412,6 +421,8 @@ export async function capturarPayPal(idCliente: number, data: CapturarPayPalInpu
       );
     }
   }
+
+  // captura.stub === false garantizado por el fail-closed anterior.
 
   // ── Idempotencia: si ya procesamos esta orden/captura, devolver la factura existente ──
   const refId = captura.captureId ?? captura.id;

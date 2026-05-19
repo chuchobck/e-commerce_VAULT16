@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Plus, Trash2, Edit2, Star } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
-import { getDirecciones, deleteDireccion, updateDireccion, type Direccion } from '@/features/cuenta/api/cuentaApi'
+import { getDirecciones, deleteDireccion, updateDireccion } from '@/features/cuenta/api/cuentaApi'
 import { DireccionForm } from './DireccionForm'
 import { useToast } from '@/shared/hooks/useToast'
 
