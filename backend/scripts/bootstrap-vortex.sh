@@ -9,6 +9,7 @@ set -euo pipefail
 SQL_DIR="$(cd "$(dirname "$0")/.." && pwd)/prisma/sql"
 DDL="$SQL_DIR/01_vortex_ddl_v2.sql"
 SEED="$SQL_DIR/02_vortex_seed_def_v1.sql"
+FOTOS_SEED="$SQL_DIR/03_producto_fotos_seed.sql"
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
   echo "❌ DATABASE_URL no definida" >&2
@@ -24,6 +25,9 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DDL"
 echo "▶ Cargando seed definitivo v1 ($SEED) …"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SEED"
 
+echo "▶ Cargando fotos principales + activación de promos ($FOTOS_SEED) …"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$FOTOS_SEED"
+
 echo "▶ Verificando conteos …"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At <<'SQL'
 SET search_path TO vortex, public;
@@ -36,6 +40,8 @@ SELECT 'clientes            = ' || COUNT(*) FROM cliente;
 SELECT 'productos           = ' || COUNT(*) FROM producto;
 SELECT 'variantes           = ' || COUNT(*) FROM variante_producto;
 SELECT 'promociones         = ' || COUNT(*) FROM promocion;
+SELECT 'promociones_ACT     = ' || COUNT(*) FROM promocion WHERE estado='ACT';
+SELECT 'producto_fotos      = ' || COUNT(*) FROM producto_fotos;
 SQL
 
 echo "▶ Verificando hashes bcrypt vs contraseñas del repo …"
