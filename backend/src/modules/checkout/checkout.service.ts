@@ -394,21 +394,21 @@ export async function capturarPayPal(idCliente: number, data: CapturarPayPalInpu
     throw new ConflictError(`Pago PayPal no completado (status: ${captura.status})`);
   }
 
-  // ── Verificaciones de integridad (sólo para modo real) ────────────────
+  // ── Verificaciones de integridad (fail-closed en modo real) ───────────
   if (!captura.stub) {
-    if (captura.currencyCode && captura.currencyCode !== 'USD') {
+    if (!captura.currencyCode || captura.currencyCode !== 'USD') {
       throw new ConflictError(
-        `Moneda PayPal inválida: ${captura.currencyCode} (esperado USD)`,
+        `Moneda PayPal inválida o ausente: ${captura.currencyCode ?? 'null'} (esperado USD)`,
       );
     }
-    if (captura.amountValue && Number(captura.amountValue).toFixed(2) !== total.toFixed(2)) {
+    if (!captura.amountValue || Number(captura.amountValue).toFixed(2) !== total.toFixed(2)) {
       throw new ConflictError(
-        `Monto PayPal (${captura.amountValue}) no coincide con el total del carrito (${total.toFixed(2)})`,
+        `Monto PayPal (${captura.amountValue ?? 'null'}) no coincide con el total del carrito (${total.toFixed(2)})`,
       );
     }
-    if (captura.customId && captura.customId !== expectedCustomId) {
+    if (!captura.customId || captura.customId !== expectedCustomId) {
       throw new ConflictError(
-        `Orden PayPal no pertenece a este cliente/dirección (custom_id mismatch)`,
+        `Orden PayPal no pertenece a este cliente/dirección (custom_id mismatch o ausente)`,
       );
     }
   }
