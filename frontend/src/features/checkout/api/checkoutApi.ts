@@ -65,7 +65,7 @@ export interface ConfirmacionResponse {
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 export async function validarCarrito(): Promise<CheckoutValidacion> {
-  const res = await api.get<ApiResponse<CheckoutValidacion>>('/api/carrito/validar')
+  const res = await api.get<ApiResponse<CheckoutValidacion>>('/carrito/validar')
   return res.data.data
 }
 
@@ -77,12 +77,12 @@ export async function iniciarPago(payload: {
   // tarjeta y transferencia siguen el flujo unificado de checkout.
   if (payload.metodo_pago === 'PAYPAL') {
     const res = await api.post<ApiResponse<IniciarPagoResponse>>(
-      '/api/pagos/paypal/create-order',
+      '/pagos/paypal/create-order',
       { id_direccion_envio: payload.id_direccion_envio },
     )
     return res.data.data
   }
-  const res = await api.post<ApiResponse<IniciarPagoResponse>>('/api/checkout/iniciar-pago', payload)
+  const res = await api.post<ApiResponse<IniciarPagoResponse>>('/checkout/iniciar-pago', payload)
   return res.data.data
 }
 
@@ -91,7 +91,7 @@ export async function capturarPayPal(payload: {
   paypal_order_id: string
 }): Promise<{ id_factura: string; total: number; estado: string }> {
   const res = await api.post<ApiResponse<{ id_factura: string; total: number; estado: string }>>(
-    `/api/pagos/paypal/capture-order/${encodeURIComponent(payload.paypal_order_id)}`,
+    `/pagos/paypal/capture-order/${encodeURIComponent(payload.paypal_order_id)}`,
     { id_direccion_envio: payload.id_direccion_envio },
   )
   return res.data.data
@@ -101,13 +101,13 @@ export async function confirmarTarjetaSimulada(payload: {
   id_direccion_envio: number
 }): Promise<{ id_factura: string; total: number; estado: string }> {
   const res = await api.post<ApiResponse<{ id_factura: string; total: number; estado: string }>>(
-    '/api/checkout/tarjeta/confirmar',
+    '/checkout/tarjeta/confirmar',
     payload,
   )
   return res.data.data
 }
 
 export async function getFactura(idFactura: string): Promise<ConfirmacionResponse> {
-  const res = await api.get<ApiResponse<ConfirmacionResponse>>(`/api/facturas/me/${idFactura}`)
+  const res = await api.get<ApiResponse<ConfirmacionResponse>>(`/facturas/me/${idFactura}`)
   return res.data.data
 }

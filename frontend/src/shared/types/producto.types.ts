@@ -1,7 +1,10 @@
-// ─── Tipos de Producto (reflejan la respuesta del backend) ────────────────────
+// ─── Tipos de Producto (normalizados desde la respuesta del backend) ──────────
+// El backend devuelve formas crudas de Prisma (id_producto, precio_venta,
+// producto_fotos, etc.). El frontend usa estas formas normalizadas y los
+// mappers en `@/shared/lib/mappers.ts` transforman raw → frontend.
 
 export interface Categoria {
-  id: number
+  id: string
   nombre: string
   slug: string
 }
@@ -20,7 +23,7 @@ export interface Foto {
 
 export interface Variante {
   id: number
-  productoId: number
+  productoId: string
   tallaId: number
   color: string
   codigoHex: string
@@ -30,8 +33,8 @@ export interface Variante {
 }
 
 export interface Producto {
-  id: number
-  categoriaId: number
+  id: string
+  categoriaId: string
   nombre: string
   slug: string
   descripcion: string | null
@@ -51,7 +54,7 @@ export interface ProductosPaginados {
   items: Producto[]
   meta: {
     page: number
-    limit: number
+    pageSize: number
     total: number
     totalPages: number
   }

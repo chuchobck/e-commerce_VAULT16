@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 
 export interface Filtros {
   search?: string
-  categoriaId?: number
+  categoriaId?: string
   talla?: string[]
   color?: string[]
   precioMin?: number
@@ -20,9 +20,7 @@ export function useFiltros() {
 
   const filtros: Filtros = useMemo(() => {
     const search = searchParams.get('q') || searchParams.get('search') || undefined
-    const categoriaId = searchParams.get('categoriaId')
-      ? Number(searchParams.get('categoriaId'))
-      : undefined
+    const categoriaId = searchParams.get('categoriaId') || undefined
     const talla = searchParams.get('talla')?.split(',').filter(Boolean) || undefined
     const color = searchParams.get('color')?.split(',').filter(Boolean) || undefined
     const precioMin = searchParams.get('precioMin')

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowRight } from 'lucide-react'
 
 interface SearchResult {
-  id: number
+  id: string
   nombre: string
   precio: number
   categoria: string

@@ -101,7 +101,7 @@ export function FiltrosSidebar({
   // ── Categoría ──────────────────────────────────────────────────────────
 
   const handleCategoriaClick = useCallback(
-    (catId: number) => {
+    (catId: string) => {
       setFiltro(
         'categoriaId',
         filtros.categoriaId === catId ? undefined : catId,

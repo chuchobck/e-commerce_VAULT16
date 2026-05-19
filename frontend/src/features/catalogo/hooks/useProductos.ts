@@ -10,7 +10,7 @@ const PAGE_SIZE = 16
  */
 export function useProductos(filtros: Filtros) {
   const params: Omit<FetchProductosParams, 'page'> = {
-    limit: PAGE_SIZE,
+    pageSize: PAGE_SIZE,
     search: filtros.search,
     categoriaId: filtros.categoriaId,
     // Backend doesn't support talla/color/price filter yet — handled client-side or TODO backend

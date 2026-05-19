@@ -5,7 +5,15 @@ import type { Foto } from '@/shared/types/producto.types'
 
 // ─── Procedural SVG placeholder (same as catalog) ────────────────────────────
 
-function PlaceholderSVG({ seed }: { seed: number }) {
+function PlaceholderSVG({ seed: rawSeed }: { seed: string | number }) {
+  const seed =
+    typeof rawSeed === 'number'
+      ? rawSeed
+      : (() => {
+          let h = 0
+          for (let i = 0; i < rawSeed.length; i++) h = (h * 31 + rawSeed.charCodeAt(i)) >>> 0
+          return h
+        })()
   const hue = (seed * 137) % 360
   const shapes = (seed % 4) + 2
   return (
@@ -80,7 +88,7 @@ function Lightbox({
 
 interface ProductGalleryProps {
   fotos: Foto[]
-  productId: number
+  productId: string
   productName: string
 }
 

@@ -12,14 +12,14 @@ export interface CarritoItemBackend {
   descuento: number
   variante: {
     id: number
-    productoId: number
+    productoId: string
     color: string
     codigoHex: string
     stock: number
     sku: string
     talla: { id: number; nombre: string }
     producto: {
-      id: number
+      id: string
       nombre: string
       slug: string
       precio: number
@@ -43,7 +43,7 @@ export interface CarritoValidacion {
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 export async function getCarrito(): Promise<CarritoBackend> {
-  const res = await api.get<ApiResponse<CarritoBackend>>('/api/carrito')
+  const res = await api.get<ApiResponse<CarritoBackend>>('/carrito')
   return res.data.data
 }
 
@@ -51,7 +51,7 @@ export async function addItem(payload: {
   varianteId: number
   cantidad: number
 }): Promise<CarritoItemBackend> {
-  const res = await api.post<ApiResponse<CarritoItemBackend>>('/api/carrito/items', payload)
+  const res = await api.post<ApiResponse<CarritoItemBackend>>('/carrito/items', payload)
   return res.data.data
 }
 
@@ -59,21 +59,21 @@ export async function updateCantidad(
   itemId: number,
   cantidad: number,
 ): Promise<CarritoItemBackend> {
-  const res = await api.put<ApiResponse<CarritoItemBackend>>(`/api/carrito/items/${itemId}`, {
+  const res = await api.put<ApiResponse<CarritoItemBackend>>(`/carrito/items/${itemId}`, {
     cantidad,
   })
   return res.data.data
 }
 
 export async function removeItem(itemId: number): Promise<void> {
-  await api.delete(`/api/carrito/items/${itemId}`)
+  await api.delete(`/carrito/items/${itemId}`)
 }
 
 export async function clearCarrito(): Promise<void> {
-  await api.delete('/api/carrito')
+  await api.delete('/carrito')
 }
 
 export async function validarCarrito(): Promise<CarritoValidacion> {
-  const res = await api.get<ApiResponse<CarritoValidacion>>('/api/carrito/validar')
+  const res = await api.get<ApiResponse<CarritoValidacion>>('/carrito/validar')
   return res.data.data
 }

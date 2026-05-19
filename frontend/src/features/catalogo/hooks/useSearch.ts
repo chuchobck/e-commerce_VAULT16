@@ -3,7 +3,7 @@ import { fetchProductos } from '@/features/catalogo/api/catalogoApi'
 import type { Producto } from '@/shared/types/producto.types'
 
 interface SearchResult {
-  id: number
+  id: string
   nombre: string
   precio: number
   categoria: string
@@ -60,7 +60,7 @@ export function useSearch(): UseSearchReturn {
       try {
         const data = await fetchProductos({
           search: q.trim(),
-          limit: MAX_SUGGESTIONS,
+          pageSize: MAX_SUGGESTIONS,
           page: 1,
         })
 

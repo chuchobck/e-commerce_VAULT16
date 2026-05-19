@@ -70,8 +70,7 @@ function NotFound() {
 
 export function ProductoDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const numericId = Number(id) || 0
-  const { data: producto, isLoading, isError } = useProducto(numericId)
+  const { data: producto, isLoading, isError } = useProducto(id ?? '')
 
   // Loading
   if (isLoading) {

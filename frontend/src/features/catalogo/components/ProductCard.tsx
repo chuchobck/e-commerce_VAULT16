@@ -4,7 +4,14 @@ import type { Producto } from '@/shared/types/producto.types'
 
 // ─── Procedural SVG Placeholder (seeded by product id) ───────────────────────
 
-function ProductPlaceholderSVG({ seed }: { seed: number }) {
+function hashSeed(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+  return h
+}
+
+function ProductPlaceholderSVG({ seed: rawSeed }: { seed: string | number }) {
+  const seed = typeof rawSeed === 'number' ? rawSeed : hashSeed(rawSeed)
   // Simple hash to get varied visuals per product
   const hue = (seed * 137) % 360
   const angle = (seed * 53) % 180

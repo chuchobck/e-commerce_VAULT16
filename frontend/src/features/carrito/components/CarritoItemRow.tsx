@@ -7,7 +7,15 @@ import type { CarritoItem } from '@/features/carrito/stores/carritoStore'
 
 // ─── Procedural SVG placeholder (matches catalog) ────────────────────────────
 
-function PlaceholderThumb({ seed }: { seed: number }) {
+function PlaceholderThumb({ seed: rawSeed }: { seed: string | number }) {
+  const seed =
+    typeof rawSeed === 'number'
+      ? rawSeed
+      : (() => {
+          let h = 0
+          for (let i = 0; i < rawSeed.length; i++) h = (h * 31 + rawSeed.charCodeAt(i)) >>> 0
+          return h
+        })()
   const hue = (seed * 137) % 360
   return (
     <svg viewBox="0 0 64 80" className="w-full h-full" preserveAspectRatio="xMidYMid slice">

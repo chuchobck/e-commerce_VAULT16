@@ -27,7 +27,7 @@ export async function updateProfile(payload: {
   apellido1?: string
   telefono?: string
 }): Promise<Cliente> {
-  const res = await api.put<ApiResponse<Cliente>>('/api/clientes/profile', payload)
+  const res = await api.put<ApiResponse<Cliente>>('/clientes/profile', payload)
   return res.data.data
 }
 
@@ -35,27 +35,27 @@ export async function changePassword(payload: {
   oldPassword: string
   newPassword: string
 }): Promise<{ message: string }> {
-  const res = await api.put<ApiResponse<{ message: string }>>('/api/auth/change-password', payload)
+  const res = await api.put<ApiResponse<{ message: string }>>('/auth/change-password', payload)
   return res.data.data
 }
 
 // ─── Direcciones ─────────────────────────────────────────────────────────────
 
 export async function getDirecciones(): Promise<Direccion[]> {
-  const res = await api.get<ApiResponse<Direccion[]>>('/api/clientes/direcciones')
+  const res = await api.get<ApiResponse<Direccion[]>>('/clientes/direcciones')
   return res.data.data
 }
 
 export async function createDireccion(payload: Omit<Direccion, 'id' | 'clienteId'>): Promise<Direccion> {
-  const res = await api.post<ApiResponse<Direccion>>('/api/clientes/direcciones', payload)
+  const res = await api.post<ApiResponse<Direccion>>('/clientes/direcciones', payload)
   return res.data.data
 }
 
 export async function updateDireccion(id: number, payload: Partial<Omit<Direccion, 'id' | 'clienteId'>>): Promise<Direccion> {
-  const res = await api.put<ApiResponse<Direccion>>(`/api/clientes/direcciones/${id}`, payload)
+  const res = await api.put<ApiResponse<Direccion>>(`/clientes/direcciones/${id}`, payload)
   return res.data.data
 }
 
 export async function deleteDireccion(id: number): Promise<void> {
-  await api.delete(`/api/clientes/direcciones/${id}`)
+  await api.delete(`/clientes/direcciones/${id}`)
 }

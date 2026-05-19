@@ -16,7 +16,7 @@ export function ProductosRelacionados({ producto }: ProductosRelacionadosProps) 
     queryFn: () =>
       fetchProductos({
         categoriaId: producto.categoriaId,
-        limit: 5, // Fetch 5 so we can exclude the current one
+        pageSize: 5, // Fetch 5 so we can exclude the current one
       }),
     staleTime: 5 * 60 * 1000,
   })

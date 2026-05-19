@@ -2,6 +2,12 @@ import axios from 'axios'
 
 const TOKEN_KEY = 'vault16_token'
 
+// ⚠️  Convención de URLs:
+//   `baseURL = VITE_API_URL` (por defecto `/api/v1`), por lo tanto cada
+//   llamada DEBE usar rutas SIN el prefijo `/api/`. Ejemplos correctos:
+//     api.get('/productos'), api.post('/auth/login'), api.get('/carrito').
+//   NUNCA escribir `'/api/...'` en una llamada o el path se duplica a
+//   `/api/v1/api/...` y devuelve 404.
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: { 'Content-Type': 'application/json' },

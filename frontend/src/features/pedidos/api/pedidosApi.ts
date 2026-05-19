@@ -46,11 +46,11 @@ export interface PedidoResumen {
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export async function getPedidos(): Promise<PedidoResumen[]> {
-  const res = await api.get<ApiResponse<PedidoResumen[]>>('/api/pedidos')
+  const res = await api.get<ApiResponse<PedidoResumen[]>>('/pedidos')
   return res.data.data
 }
 
 export async function getPedido(id: number): Promise<Pedido> {
-  const res = await api.get<ApiResponse<Pedido>>(`/api/pedidos/${id}`)
+  const res = await api.get<ApiResponse<Pedido>>(`/pedidos/${id}`)
   return res.data.data
 }

@@ -1,25 +1,23 @@
 import { api } from '@/shared/lib/api'
-import type { ApiResponse } from '@/shared/types/api.types'
-import type { Producto, ProductosPaginados } from '@/shared/types/producto.types'
+import type { Producto } from '@/shared/types/producto.types'
+import { mapProducto, type RawProducto } from '@/shared/lib/mappers'
+
+interface RawList {
+  success: boolean
+  data: RawProducto[]
+  meta?: { page: number; pageSize: number; total: number; totalPages: number }
+}
 
 /**
  * Obtiene productos destacados para la home.
- * Usa el flag destacado=true del backend.
- * Fallback: devuelve los primeros 8 productos si no hay destacados.
+ * Backend aún no soporta destacado=true, así que devolvemos los primeros 8.
  */
 export async function getDestacados(): Promise<Producto[]> {
   try {
-    const res = await api.get<ApiResponse<ProductosPaginados>>('/api/productos', {
-      params: { destacado: 'true', limit: 8 },
+    const res = await api.get<RawList>('/productos', {
+      params: { pageSize: 8 },
     })
-    const items = res.data.data.items
-    if (items.length > 0) return items
-
-    // Fallback: primeros 8 si no hay destacados
-    const fallback = await api.get<ApiResponse<ProductosPaginados>>('/api/productos', {
-      params: { limit: 8 },
-    })
-    return fallback.data.data.items
+    return (res.data.data ?? []).map(mapProducto)
   } catch {
     return []
   }

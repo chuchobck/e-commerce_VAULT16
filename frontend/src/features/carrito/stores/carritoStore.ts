@@ -7,7 +7,7 @@ export interface CarritoItem {
   /** Backend carrito_detalle ID (0 for local-only items) */
   id: number
   varianteId: number
-  productoId: number
+  productoId: string
   nombre: string
   slug: string
   talla: string
