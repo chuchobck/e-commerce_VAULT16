@@ -82,8 +82,7 @@ export function DireccionStep({ selectedId, onSelect, onContinue }: DireccionSte
                     )}
                   </div>
                   <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
-                    {dir.callePrincipal} {dir.numeracion}
-                    {dir.calleSecundaria ? ` y ${dir.calleSecundaria}` : ''}
+                    {dir.direccion}
                   </p>
                   <p className="text-xs text-text-muted dark:text-text-muted-dark">
                     {dir.ciudad}, {dir.provincia}

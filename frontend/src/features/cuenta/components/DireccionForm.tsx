@@ -2,19 +2,22 @@ import { useForm } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
-import { createDireccion, updateDireccion, type Direccion } from '@/features/cuenta/api/cuentaApi'
+import {
+  createDireccion,
+  updateDireccion,
+  type Direccion,
+  type DireccionInput,
+} from '@/features/cuenta/api/cuentaApi'
 import { useToast } from '@/shared/hooks/useToast'
 
 interface DireccionFormData {
   alias: string
-  callePrincipal: string
-  numeracion: string
-  calleSecundaria: string
+  nombreDestinatario: string
+  telefonoContacto: string
+  direccion: string
   referencia: string
-  barrio: string
   ciudad: string
   provincia: string
-  pais: string
   codigoPostal: string
   esPrincipal: boolean
 }
@@ -36,14 +39,12 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
   } = useForm<DireccionFormData>({
     defaultValues: {
       alias: direccion?.alias || '',
-      callePrincipal: direccion?.callePrincipal || '',
-      numeracion: direccion?.numeracion || '',
-      calleSecundaria: direccion?.calleSecundaria || '',
+      nombreDestinatario: direccion?.nombreDestinatario || '',
+      telefonoContacto: direccion?.telefonoContacto || '',
+      direccion: direccion?.direccion || '',
       referencia: direccion?.referencia || '',
-      barrio: direccion?.barrio || '',
       ciudad: direccion?.ciudad || '',
       provincia: direccion?.provincia || '',
-      pais: direccion?.pais || 'Ecuador',
       codigoPostal: direccion?.codigoPostal || '',
       esPrincipal: direccion?.esPrincipal || false,
     },
@@ -51,12 +52,16 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
 
   const mutation = useMutation({
     mutationFn: (data: DireccionFormData) => {
-      const payload = {
-        ...data,
-        calleSecundaria: data.calleSecundaria || null,
+      const payload: DireccionInput = {
+        alias: data.alias,
+        nombreDestinatario: data.nombreDestinatario,
+        telefonoContacto: data.telefonoContacto,
+        direccion: data.direccion,
         referencia: data.referencia || null,
-        barrio: data.barrio || null,
+        ciudad: data.ciudad,
+        provincia: data.provincia,
         codigoPostal: data.codigoPostal || null,
+        esPrincipal: data.esPrincipal,
       }
       if (isEditing) {
         return updateDireccion(direccion.id, payload)
@@ -89,30 +94,29 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
         {...register('alias', { required: 'Requerido' })}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="sm:col-span-2">
-          <Input
-            label="Calle principal"
-            placeholder="Av. Principal"
-            error={errors.callePrincipal?.message}
-            fullWidth
-            {...register('callePrincipal', { required: 'Requerido' })}
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
-          label="Numeración"
-          placeholder="N34-56"
-          error={errors.numeracion?.message}
+          label="Nombre del destinatario"
+          placeholder="Juan Pérez"
+          error={errors.nombreDestinatario?.message}
           fullWidth
-          {...register('numeracion', { required: 'Requerido' })}
+          {...register('nombreDestinatario', { required: 'Requerido' })}
+        />
+        <Input
+          label="Teléfono de contacto"
+          placeholder="0991234567"
+          error={errors.telefonoContacto?.message}
+          fullWidth
+          {...register('telefonoContacto', { required: 'Requerido' })}
         />
       </div>
 
       <Input
-        label="Calle secundaria (opcional)"
-        placeholder="Calle transversal"
+        label="Dirección"
+        placeholder="Av. Principal N34-56 y Calle Secundaria"
+        error={errors.direccion?.message}
         fullWidth
-        {...register('calleSecundaria')}
+        {...register('direccion', { required: 'Requerido' })}
       />
 
       <Input
@@ -139,19 +143,12 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Input
-          label="País"
-          fullWidth
-          {...register('pais')}
-        />
-        <Input
-          label="Código postal (opcional)"
-          placeholder="170150"
-          fullWidth
-          {...register('codigoPostal')}
-        />
-      </div>
+      <Input
+        label="Código postal (opcional)"
+        placeholder="170150"
+        fullWidth
+        {...register('codigoPostal')}
+      />
 
       <label className="flex items-center gap-2 cursor-pointer">
         <input

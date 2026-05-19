@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Plus, Trash2, Edit2, Star } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
-import { getDirecciones, deleteDireccion, updateDireccion } from '@/features/cuenta/api/cuentaApi'
+import { getDirecciones, deleteDireccion, setDireccionPrincipal } from '@/features/cuenta/api/cuentaApi'
 import { DireccionForm } from './DireccionForm'
 import { useToast } from '@/shared/hooks/useToast'
 
@@ -28,7 +28,7 @@ export function DireccionesList() {
   })
 
   const setPrincipalMutation = useMutation({
-    mutationFn: (id: number) => updateDireccion(id, { esPrincipal: true }),
+    mutationFn: (id: number) => setDireccionPrincipal(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['direcciones'] })
       success('Dirección principal actualizada')
@@ -80,8 +80,7 @@ export function DireccionesList() {
                       )}
                     </div>
                     <p className="text-sm text-text-secondary dark:text-text-secondary-dark truncate">
-                      {dir.callePrincipal} {dir.numeracion}
-                      {dir.calleSecundaria && ` y ${dir.calleSecundaria}`}
+                      {dir.direccion}
                     </p>
                     <p className="text-xs text-text-muted dark:text-text-muted-dark">
                       {dir.ciudad}, {dir.provincia}

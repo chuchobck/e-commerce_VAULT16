@@ -1,23 +1,42 @@
 import { api } from '@/shared/lib/api'
 import type { ApiResponse } from '@/shared/types/api.types'
 import type { Cliente } from '@/shared/stores/authStore'
+import {
+  mapCliente,
+  mapDireccion,
+  type RawCliente,
+  type RawDireccion,
+  type DireccionMapped,
+} from '@/shared/lib/mappers'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface Direccion {
-  id: number
-  clienteId: number
+export type Direccion = DireccionMapped
+
+export interface DireccionInput {
   alias: string
-  callePrincipal: string
-  numeracion: string
-  calleSecundaria: string | null
-  referencia: string | null
-  barrio: string | null
-  ciudad: string
+  nombreDestinatario: string
+  telefonoContacto: string
   provincia: string
-  pais: string
-  codigoPostal: string | null
-  esPrincipal: boolean
+  ciudad: string
+  direccion: string
+  referencia?: string | null
+  codigoPostal?: string | null
+  esPrincipal?: boolean
+}
+
+function toBackendDireccion(input: DireccionInput) {
+  return {
+    alias: input.alias,
+    nombre_destinatario: input.nombreDestinatario,
+    telefono_contacto: input.telefonoContacto,
+    provincia: input.provincia,
+    ciudad: input.ciudad,
+    direccion: input.direccion,
+    referencia: input.referencia ?? undefined,
+    codigo_postal: input.codigoPostal ?? undefined,
+    es_principal: input.esPrincipal ?? false,
+  }
 }
 
 // ─── Profile ─────────────────────────────────────────────────────────────────
@@ -27,35 +46,55 @@ export async function updateProfile(payload: {
   apellido1?: string
   telefono?: string
 }): Promise<Cliente> {
-  const res = await api.put<ApiResponse<Cliente>>('/clientes/profile', payload)
-  return res.data.data
+  const res = await api.put<ApiResponse<RawCliente>>('/clientes/me', payload)
+  return mapCliente(res.data.data)
 }
 
 export async function changePassword(payload: {
   oldPassword: string
   newPassword: string
 }): Promise<{ message: string }> {
-  const res = await api.put<ApiResponse<{ message: string }>>('/auth/change-password', payload)
-  return res.data.data
+  await api.put<ApiResponse<unknown>>('/clientes/me/password', payload)
+  return { message: 'Contraseña actualizada' }
 }
 
 // ─── Direcciones ─────────────────────────────────────────────────────────────
 
+const DIR_BASE = '/clientes/me/direcciones'
+
 export async function getDirecciones(): Promise<Direccion[]> {
-  const res = await api.get<ApiResponse<Direccion[]>>('/clientes/direcciones')
-  return res.data.data
+  const res = await api.get<ApiResponse<RawDireccion[]>>(DIR_BASE)
+  return res.data.data.map(mapDireccion)
 }
 
-export async function createDireccion(payload: Omit<Direccion, 'id' | 'clienteId'>): Promise<Direccion> {
-  const res = await api.post<ApiResponse<Direccion>>('/clientes/direcciones', payload)
-  return res.data.data
+export async function createDireccion(payload: DireccionInput): Promise<Direccion> {
+  const res = await api.post<ApiResponse<RawDireccion>>(DIR_BASE, toBackendDireccion(payload))
+  return mapDireccion(res.data.data)
 }
 
-export async function updateDireccion(id: number, payload: Partial<Omit<Direccion, 'id' | 'clienteId'>>): Promise<Direccion> {
-  const res = await api.put<ApiResponse<Direccion>>(`/clientes/direcciones/${id}`, payload)
-  return res.data.data
+export async function updateDireccion(
+  id: number,
+  payload: Partial<DireccionInput>,
+): Promise<Direccion> {
+  const body: Record<string, unknown> = {}
+  if (payload.alias !== undefined) body.alias = payload.alias
+  if (payload.nombreDestinatario !== undefined) body.nombre_destinatario = payload.nombreDestinatario
+  if (payload.telefonoContacto !== undefined) body.telefono_contacto = payload.telefonoContacto
+  if (payload.provincia !== undefined) body.provincia = payload.provincia
+  if (payload.ciudad !== undefined) body.ciudad = payload.ciudad
+  if (payload.direccion !== undefined) body.direccion = payload.direccion
+  if (payload.referencia !== undefined) body.referencia = payload.referencia ?? undefined
+  if (payload.codigoPostal !== undefined) body.codigo_postal = payload.codigoPostal ?? undefined
+
+  const res = await api.put<ApiResponse<RawDireccion>>(`${DIR_BASE}/${id}`, body)
+  return mapDireccion(res.data.data)
+}
+
+export async function setDireccionPrincipal(id: number): Promise<Direccion> {
+  const res = await api.put<ApiResponse<RawDireccion>>(`${DIR_BASE}/${id}/principal`, {})
+  return mapDireccion(res.data.data)
 }
 
 export async function deleteDireccion(id: number): Promise<void> {
-  await api.delete(`/clientes/direcciones/${id}`)
+  await api.delete(`${DIR_BASE}/${id}`)
 }

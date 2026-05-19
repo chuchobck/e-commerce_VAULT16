@@ -6,12 +6,12 @@ import { PedidoDetalle } from '@/features/pedidos/components/PedidoDetalle'
 
 export function PedidoDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const numericId = Number(id) || 0
+  const idFactura = id ?? ''
 
   const { data: pedido, isLoading, isError } = useQuery({
-    queryKey: ['pedido', numericId],
-    queryFn: () => getPedido(numericId),
-    enabled: numericId > 0,
+    queryKey: ['pedido', idFactura],
+    queryFn: () => getPedido(idFactura),
+    enabled: idFactura.length > 0,
   })
 
   if (isLoading) {

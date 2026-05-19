@@ -10,6 +10,7 @@ const estadoConfig: Record<EstadoPedido, { label: string; color: string }> = {
   ENV: { label: 'Enviado',    color: 'bg-status-warning-bg dark:bg-status-warning-bg-dark text-status-warning dark:text-status-warning-dark' },
   ENT: { label: 'Entregado',  color: 'bg-status-success-bg dark:bg-status-success-bg-dark text-status-success dark:text-status-success-dark' },
   CAN: { label: 'Cancelado',  color: 'bg-status-danger-bg dark:bg-status-danger-bg-dark text-status-danger dark:text-status-danger-dark' },
+  ANU: { label: 'Anulado',    color: 'bg-status-danger-bg dark:bg-status-danger-bg-dark text-status-danger dark:text-status-danger-dark' },
 }
 
 interface PedidoCardProps {

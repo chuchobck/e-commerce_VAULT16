@@ -200,6 +200,213 @@ export interface PromocionMapped {
   }>
 }
 
+// ─── Cliente ─────────────────────────────────────────────────────────────────
+
+export interface RawCliente {
+  id_cliente: number
+  email: string
+  nombre1: string
+  apellido1: string
+  telefono?: string | null
+  ruc_cedula?: string
+  email_verificado?: boolean
+  estado?: string
+}
+
+export interface ClienteMapped {
+  id: number
+  rucCedula: string
+  nombre1: string
+  apellido1: string
+  email: string
+  telefono: string | null
+  emailVerificado: boolean
+}
+
+export function mapCliente(raw: RawCliente): ClienteMapped {
+  return {
+    id: raw.id_cliente,
+    email: raw.email,
+    nombre1: raw.nombre1,
+    apellido1: raw.apellido1,
+    telefono: raw.telefono ?? null,
+    rucCedula: raw.ruc_cedula ?? '',
+    emailVerificado: raw.email_verificado ?? true,
+  }
+}
+
+// ─── Dirección ───────────────────────────────────────────────────────────────
+
+export interface RawDireccion {
+  id_direccion: number
+  id_cliente: number
+  alias: string
+  nombre_destinatario: string
+  telefono_contacto: string
+  provincia: string
+  ciudad: string
+  direccion: string
+  referencia?: string | null
+  codigo_postal?: string | null
+  es_principal: boolean
+  activa?: boolean
+}
+
+export interface DireccionMapped {
+  id: number
+  clienteId: number
+  alias: string
+  nombreDestinatario: string
+  telefonoContacto: string
+  provincia: string
+  ciudad: string
+  direccion: string
+  referencia: string | null
+  codigoPostal: string | null
+  esPrincipal: boolean
+}
+
+export function mapDireccion(raw: RawDireccion): DireccionMapped {
+  return {
+    id: raw.id_direccion,
+    clienteId: raw.id_cliente,
+    alias: raw.alias,
+    nombreDestinatario: raw.nombre_destinatario,
+    telefonoContacto: raw.telefono_contacto,
+    provincia: raw.provincia,
+    ciudad: raw.ciudad,
+    direccion: raw.direccion,
+    referencia: raw.referencia ?? null,
+    codigoPostal: raw.codigo_postal ?? null,
+    esPrincipal: raw.es_principal,
+  }
+}
+
+// ─── Factura / Pedido ────────────────────────────────────────────────────────
+
+export interface RawFacturaList {
+  id_factura: string
+  id_cliente: number
+  fecha_emision: string
+  estado: string
+  subtotal: string | number
+  descuento_total?: string | number
+  impuestos?: string | number
+  total: string | number
+  cliente?: { id_cliente: number; email: string; nombre1: string; apellido1: string }
+  pago?: Array<{ metodo: string; estado: string; monto: string | number; fecha: string }>
+  detalle_factura?: RawDetalleFactura[]
+  _count?: { detalle_factura?: number }
+}
+
+export interface RawDetalleFactura {
+  id_detalle?: number
+  cantidad: number
+  precio_unitario: string | number
+  subtotal: string | number
+  variante_producto?: {
+    id_variante: number
+    sku: string
+    color: string
+    id_producto: string
+    talla?: { descripcion: string }
+    producto?: { nombre: string; precio_venta: string | number; producto_fotos?: RawFoto[] }
+  }
+}
+
+export interface RawFacturaFull extends RawFacturaList {
+  direccion_cliente?: RawDireccion | null
+  detalle_factura?: RawDetalleFactura[]
+}
+
+export type EstadoPedido = 'EMI' | 'PAG' | 'ENV' | 'ENT' | 'CAN' | 'ANU'
+
+export interface PedidoResumenMapped {
+  id: number
+  idFactura: string
+  fecha: string
+  estado: EstadoPedido
+  total: number
+  totalItems: number
+}
+
+export interface PedidoItemMapped {
+  id: number
+  productoNombre: string
+  talla: string
+  color: string
+  cantidad: number
+  precioUnitario: number
+  subtotal: number
+  imagen: string
+}
+
+export interface PedidoMapped {
+  id: number
+  idFactura: string
+  fecha: string
+  estado: EstadoPedido
+  subtotal: number
+  descuento: number
+  impuestos: number
+  total: number
+  items: PedidoItemMapped[]
+  direccionEnvio: {
+    callePrincipal: string
+    numeracion: string
+    ciudad: string
+    provincia: string
+  } | null
+}
+
+function hashStringToInt(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+  return h
+}
+
+export function mapPedidoResumen(raw: RawFacturaList): PedidoResumenMapped {
+  return {
+    id: hashStringToInt(raw.id_factura),
+    idFactura: raw.id_factura,
+    fecha: raw.fecha_emision,
+    estado: raw.estado as EstadoPedido,
+    total: toNumber(raw.total),
+    totalItems: raw._count?.detalle_factura ?? raw.detalle_factura?.length ?? 0,
+  }
+}
+
+export function mapPedido(raw: RawFacturaFull): PedidoMapped {
+  return {
+    id: hashStringToInt(raw.id_factura),
+    idFactura: raw.id_factura,
+    fecha: raw.fecha_emision,
+    estado: raw.estado as EstadoPedido,
+    subtotal: toNumber(raw.subtotal),
+    descuento: toNumber(raw.descuento_total ?? 0),
+    impuestos: toNumber(raw.impuestos ?? 0),
+    total: toNumber(raw.total),
+    items: (raw.detalle_factura ?? []).map((d, i) => ({
+      id: d.id_detalle ?? i,
+      productoNombre: d.variante_producto?.producto?.nombre ?? 'Producto',
+      talla: d.variante_producto?.talla?.descripcion ?? '',
+      color: d.variante_producto?.color ?? '',
+      cantidad: d.cantidad,
+      precioUnitario: toNumber(d.precio_unitario),
+      subtotal: toNumber(d.subtotal),
+      imagen: d.variante_producto?.producto?.producto_fotos?.[0]?.url_foto ?? '',
+    })),
+    direccionEnvio: raw.direccion_cliente
+      ? {
+          callePrincipal: raw.direccion_cliente.direccion,
+          numeracion: '',
+          ciudad: raw.direccion_cliente.ciudad,
+          provincia: raw.direccion_cliente.provincia,
+        }
+      : null,
+  }
+}
+
 export function mapPromocion(raw: RawPromocion): PromocionMapped {
   return {
     id: raw.id_promocion,

@@ -1,56 +1,37 @@
 import { api } from '@/shared/lib/api'
 import type { ApiResponse } from '@/shared/types/api.types'
+import {
+  mapPedido,
+  mapPedidoResumen,
+  type EstadoPedido as EstadoPedidoBase,
+  type PedidoItemMapped,
+  type PedidoMapped,
+  type PedidoResumenMapped,
+  type RawFacturaFull,
+  type RawFacturaList,
+} from '@/shared/lib/mappers'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type EstadoPedido = 'EMI' | 'PAG' | 'ENV' | 'ENT' | 'CAN'
+export type EstadoPedido = EstadoPedidoBase
+export type PedidoItem = PedidoItemMapped
+export type Pedido = PedidoMapped
+export type PedidoResumen = PedidoResumenMapped
 
-export interface PedidoItem {
-  id: number
-  productoNombre: string
-  talla: string
-  color: string
-  cantidad: number
-  precioUnitario: number
-  subtotal: number
-  imagen: string
-}
-
-export interface Pedido {
-  id: number
-  idFactura: string
-  fecha: string
-  estado: EstadoPedido
-  subtotal: number
-  descuento: number
-  impuestos: number
-  total: number
-  items: PedidoItem[]
-  direccionEnvio: {
-    callePrincipal: string
-    numeracion: string
-    ciudad: string
-    provincia: string
-  } | null
-}
-
-export interface PedidoResumen {
-  id: number
-  idFactura: string
-  fecha: string
-  estado: EstadoPedido
-  total: number
-  totalItems: number
+interface FacturasListResponse {
+  success: boolean
+  data: RawFacturaList[]
+  meta: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export async function getPedidos(): Promise<PedidoResumen[]> {
-  const res = await api.get<ApiResponse<PedidoResumen[]>>('/pedidos')
-  return res.data.data
+  const res = await api.get<FacturasListResponse>('/facturas/me')
+  return res.data.data.map(mapPedidoResumen)
 }
 
-export async function getPedido(id: number): Promise<Pedido> {
-  const res = await api.get<ApiResponse<Pedido>>(`/pedidos/${id}`)
-  return res.data.data
+export async function getPedido(idFactura: string): Promise<Pedido> {
+  const res = await api.get<ApiResponse<RawFacturaFull>>(`/facturas/me/${idFactura}`)
+  return mapPedido(res.data.data)
 }

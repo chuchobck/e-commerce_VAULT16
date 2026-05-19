@@ -59,7 +59,7 @@ export function CheckoutPage() {
   })
 
   const selectedDir = direcciones.find((d: Direccion) => d.id === direccionId)
-  const direccionLabel = selectedDir ? `${selectedDir.alias} — ${selectedDir.callePrincipal} ${selectedDir.numeracion}` : undefined
+  const direccionLabel = selectedDir ? `${selectedDir.alias} — ${selectedDir.direccion}` : undefined
 
   const handleDireccionContinue = useCallback(() => {
     nextStep()
