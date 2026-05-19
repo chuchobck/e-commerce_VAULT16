@@ -39,7 +39,7 @@ SELECT 'promociones         = ' || COUNT(*) FROM promocion;
 SQL
 
 echo "▶ Verificando hashes bcrypt vs contraseñas del repo …"
-node "$(cd "$(dirname "$0")" && pwd)/verify-hashes.cjs"
+( cd "$(cd "$(dirname "$0")/.." && pwd)" && node scripts/verify-hashes.cjs )
 
 echo "✅ Bootstrap completo."
 echo "   Esperado: 24 productos / 142 variantes / 6 promos / 5 backoffice / 1 cliente."

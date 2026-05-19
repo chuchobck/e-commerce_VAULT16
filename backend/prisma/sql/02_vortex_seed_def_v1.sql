@@ -119,7 +119,8 @@ INSERT INTO empleado (cedula, nombre1, apellido1, telefono, estado_emp) VALUES
 --  ventas@vault16.ec    /  Vault16Admin!  → rol VENDEDOR  (ventas, facturas)
 --  reportes@vault16.ec  /  Vault16Admin!  → rol REPORTES  (solo lectura)
 --
---  ✅ Hash bcrypt aplicado para password 'Vault16Admin!' (cost=10).
+--  ✅ Hash bcrypt definitivo (cost=10) para 'Vault16Admin!' — NO reemplazar.
+--      Verificable con `node backend/scripts/verify-hashes.cjs`.
 -- ════════════════════════════════════════════════════════════════════════
 
 INSERT INTO usuarios_backoffice (email, password_hash, id_rol, id_empleado) VALUES
@@ -614,7 +615,7 @@ FROM producto;
 --
 --  CREDENCIAL E-COMMERCE:
 --  test@vault16.ec   /  Vault16Test!
---  ✅ Hash bcrypt aplicado para password 'Vault16Test!' (cost=10).
+--  ✅ Hash bcrypt definitivo (cost=10) para 'Vault16Test!' — NO reemplazar.
 -- ════════════════════════════════════════════════════════════════════════
 
 INSERT INTO cliente (email, password_hash, ruc_cedula, nombre1, apellido1, telefono, email_verificado, estado) VALUES

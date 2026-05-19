@@ -101,7 +101,11 @@ export function ResumenOrden({
           <div>
             <p className="text-xs text-text-muted dark:text-text-muted-dark">Método de pago</p>
             <p className="text-sm text-text-primary dark:text-text-primary-dark">
-              {metodoPago === 'TARJETA' ? 'Tarjeta de crédito/débito' : 'Transferencia bancaria'}
+              {metodoPago === 'TARJETA'
+                ? 'Tarjeta de crédito/débito'
+                : metodoPago === 'PAYPAL'
+                  ? 'PayPal'
+                  : 'Transferencia bancaria'}
             </p>
           </div>
           <button
