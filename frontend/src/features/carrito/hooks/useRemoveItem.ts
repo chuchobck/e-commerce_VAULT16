@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { removeItem as apiRemoveItem } from '@/features/carrito/api/carritoApi'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
+import type { CarritoItemMapped } from '@/features/carrito/api/carritoApi'
 import { useToast } from '@/shared/hooks/useToast'
 
 /**
@@ -11,6 +12,7 @@ import { useToast } from '@/shared/hooks/useToast'
 export function useRemoveItem() {
   const queryClient = useQueryClient()
   const removeOptimistic = useCarritoStore((s) => s.removeItemOptimistic)
+  const setItems = useCarritoStore((s) => s.setItems)
   const { error } = useToast()
 
   const isAuthenticated = !!localStorage.getItem('vault16_token')
@@ -18,12 +20,13 @@ export function useRemoveItem() {
   const mutation = useMutation({
     mutationFn: (itemId: number) => apiRemoveItem(itemId),
 
-    onError: () => {
-      error('No pudimos eliminar el producto')
-      queryClient.invalidateQueries({ queryKey: ['carrito'] })
+    onSuccess: (data: CarritoItemMapped[]) => {
+      setItems(data)
+      queryClient.setQueryData(['carrito'], data)
     },
 
-    onSettled: () => {
+    onError: () => {
+      error('No pudimos eliminar el producto')
       queryClient.invalidateQueries({ queryKey: ['carrito'] })
     },
   })

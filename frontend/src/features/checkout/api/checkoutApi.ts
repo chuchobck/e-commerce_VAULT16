@@ -1,5 +1,11 @@
 import { api } from '@/shared/lib/api'
 import type { ApiResponse } from '@/shared/types/api.types'
+import {
+  mapValidacionCarrito,
+  mapConfirmacionPedido,
+  type RawValidacionCarrito,
+  type RawFacturaFull,
+} from '@/shared/lib/mappers'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,7 +31,7 @@ export interface CheckoutPreview {
 
 export interface CheckoutValidacion {
   valid: boolean
-  errors: { varianteId: number; message: string }[]
+  errors: { idItem: number | null; motivo: string; message: string }[]
 }
 
 export interface IniciarPagoResponse {
@@ -47,13 +53,12 @@ export interface IniciarPagoResponse {
 }
 
 export interface ConfirmacionResponse {
-  id: number
   idFactura: string
   estado: string
   total: number
   fecha: string
   items: {
-    nombre: string
+    productoNombre: string
     talla: string
     color: string
     cantidad: number
@@ -65,8 +70,16 @@ export interface ConfirmacionResponse {
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 export async function validarCarrito(): Promise<CheckoutValidacion> {
-  const res = await api.get<ApiResponse<CheckoutValidacion>>('/carrito/validar')
-  return res.data.data
+  const res = await api.get<ApiResponse<RawValidacionCarrito>>('/carrito/validar')
+  const mapped = mapValidacionCarrito(res.data.data)
+  return {
+    valid: mapped.valido,
+    errors: mapped.problemas.map((p) => ({
+      idItem: p.idItem,
+      motivo: p.motivo,
+      message: p.mensaje,
+    })),
+  }
 }
 
 export async function iniciarPago(payload: {
@@ -108,6 +121,6 @@ export async function confirmarTarjetaSimulada(payload: {
 }
 
 export async function getFactura(idFactura: string): Promise<ConfirmacionResponse> {
-  const res = await api.get<ApiResponse<ConfirmacionResponse>>(`/facturas/me/${idFactura}`)
-  return res.data.data
+  const res = await api.get<ApiResponse<RawFacturaFull>>(`/facturas/me/${idFactura}`)
+  return mapConfirmacionPedido(res.data.data)
 }

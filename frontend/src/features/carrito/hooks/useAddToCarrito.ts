@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { addItem as apiAddItem } from '@/features/carrito/api/carritoApi'
 import { useCarritoStore, type CarritoItem } from '@/features/carrito/stores/carritoStore'
+import type { CarritoItemMapped } from '@/features/carrito/api/carritoApi'
 import { useUIStore } from '@/shared/stores/uiStore'
 import { useToast } from '@/shared/hooks/useToast'
 import type { Producto, Variante } from '@/shared/types/producto.types'
@@ -14,13 +15,14 @@ import type { Producto, Variante } from '@/shared/types/producto.types'
 export function useAddToCarrito() {
   const queryClient = useQueryClient()
   const addItemOptimistic = useCarritoStore((s) => s.addItemOptimistic)
+  const setItems = useCarritoStore((s) => s.setItems)
   const openCartDrawer = useUIStore((s) => s.openCartDrawer)
   const { success, error } = useToast()
 
   const isAuthenticated = !!localStorage.getItem('vault16_token')
 
   const mutation = useMutation({
-    mutationFn: (payload: { varianteId: number; cantidad: number }) =>
+    mutationFn: (payload: { id_variante: number; cantidad: number }) =>
       apiAddItem(payload),
 
     onMutate: async (_payload) => {
@@ -36,13 +38,12 @@ export function useAddToCarrito() {
       error('No pudimos agregar el producto')
     },
 
-    onSuccess: () => {
+    onSuccess: (data: CarritoItemMapped[]) => {
+      // Sync store + react-query cache with real backend IDs
+      setItems(data)
+      queryClient.setQueryData(['carrito'], data)
       openCartDrawer()
       success('¡Agregado al carrito!')
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['carrito'] })
     },
   })
 
@@ -82,7 +83,7 @@ export function useAddToCarrito() {
 
       if (isAuthenticated) {
         // Fire API mutation
-        mutation.mutate({ varianteId: variante.id, cantidad })
+        mutation.mutate({ id_variante: variante.id, cantidad })
       } else {
         // Guest: just update local store + open drawer
         openCartDrawer()

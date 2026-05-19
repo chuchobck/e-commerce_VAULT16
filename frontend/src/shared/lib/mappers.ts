@@ -407,6 +407,157 @@ export function mapPedido(raw: RawFacturaFull): PedidoMapped {
   }
 }
 
+// ─── Carrito ─────────────────────────────────────────────────────────────────
+
+export interface RawCarritoItem {
+  id_carrito_det: number
+  cantidad: number
+  fecha_agregado?: string
+  variante: {
+    id: number
+    color: string
+    talla: string
+    sku: string
+    stock_disponible: number
+  }
+  producto: {
+    id: string
+    nombre: string
+    foto_principal: string | null
+    precio_venta: string | number
+  }
+  descuento_pct: number
+  subtotal: string | number
+  descuento_aplicado: string | number
+  total_linea: string | number
+}
+
+export interface RawCarrito {
+  id_carrito: number | null
+  id_cliente: number
+  items: RawCarritoItem[]
+  resumen: {
+    subtotal: string | number
+    descuento_total: string | number
+    total: string | number
+    cantidad_items: number
+  }
+}
+
+export interface CarritoItemMapped {
+  id: number
+  varianteId: number
+  productoId: string
+  nombre: string
+  slug: string
+  talla: string
+  color: string
+  codigoHex: string
+  precio: number
+  precioOriginal: number
+  descuento: number
+  cantidad: number
+  stock: number
+  imagen: string
+}
+
+const COLOR_HEX_CARRITO = COLOR_HEX
+
+export function mapCarritoItem(raw: RawCarritoItem): CarritoItemMapped {
+  const precioOriginal = toNumber(raw.producto.precio_venta)
+  const descuentoPct = raw.descuento_pct ?? 0
+  const precio = descuentoPct > 0
+    ? precioOriginal * (1 - descuentoPct / 100)
+    : precioOriginal
+
+  return {
+    id: raw.id_carrito_det,
+    varianteId: raw.variante.id,
+    productoId: raw.producto.id,
+    nombre: raw.producto.nombre,
+    slug: slugify(raw.producto.nombre),
+    talla: raw.variante.talla,
+    color: raw.variante.color,
+    codigoHex: COLOR_HEX_CARRITO[raw.variante.color] ?? '#4A535A',
+    precio,
+    precioOriginal,
+    descuento: precioOriginal - precio,
+    cantidad: raw.cantidad,
+    stock: raw.variante.stock_disponible,
+    imagen: raw.producto.foto_principal ?? '',
+  }
+}
+
+export function mapCarrito(raw: RawCarrito): CarritoItemMapped[] {
+  return (raw.items ?? []).map(mapCarritoItem)
+}
+
+// ─── Validación de carrito (pre-checkout) ────────────────────────────────────
+
+export interface RawValidacionCarrito {
+  valido: boolean
+  problemas: Array<{
+    id_item: number | null
+    motivo: string
+    detalle: string
+    precio_nuevo?: number
+  }>
+}
+
+export interface ValidacionCarritoMapped {
+  valido: boolean
+  problemas: Array<{
+    idItem: number | null
+    motivo: string
+    mensaje: string
+  }>
+}
+
+export function mapValidacionCarrito(raw: RawValidacionCarrito): ValidacionCarritoMapped {
+  return {
+    valido: raw.valido,
+    problemas: (raw.problemas ?? []).map((p) => ({
+      idItem: p.id_item,
+      motivo: p.motivo,
+      mensaje: p.detalle,
+    })),
+  }
+}
+
+// ─── Confirmación de pedido (post-pago) ──────────────────────────────────────
+
+export interface ConfirmacionPedidoMapped {
+  idFactura: string
+  estado: EstadoPedido
+  total: number
+  fecha: string
+  items: Array<{
+    productoNombre: string
+    talla: string
+    color: string
+    cantidad: number
+    precioUnitario: number
+    subtotal: number
+  }>
+}
+
+export function mapConfirmacionPedido(raw: RawFacturaFull): ConfirmacionPedidoMapped {
+  return {
+    idFactura: raw.id_factura,
+    estado: raw.estado as EstadoPedido,
+    total: toNumber(raw.total),
+    fecha: raw.fecha_emision,
+    items: (raw.detalle_factura ?? []).map((d) => ({
+      productoNombre: d.variante_producto?.producto?.nombre ?? 'Producto',
+      talla: d.variante_producto?.talla?.descripcion ?? '',
+      color: d.variante_producto?.color ?? '',
+      cantidad: d.cantidad,
+      precioUnitario: toNumber(d.precio_unitario),
+      subtotal: toNumber(d.subtotal),
+    })),
+  }
+}
+
 export function mapPromocion(raw: RawPromocion): PromocionMapped {
   return {
     id: raw.id_promocion,

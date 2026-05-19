@@ -3,6 +3,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { ToastProvider } from '@/shared/components/feedback/Toast'
 import { CarritoDrawer } from '@/features/carrito/components/CarritoDrawer'
+import { useCarrito } from '@/features/carrito/hooks/useCarrito'
 
 /**
  * EcommerceLayout — Wrapper principal.
@@ -11,6 +12,9 @@ import { CarritoDrawer } from '@/features/carrito/components/CarritoDrawer'
  * min-h-screen flex flex-col → footer siempre al fondo.
  */
 export function EcommerceLayout() {
+  // Hydrate carrito from backend on mount + when query invalidates
+  useCarrito()
+
   return (
     <div className="min-h-screen flex flex-col bg-bg-base dark:bg-bg-base-dark">
       <Header />

@@ -1,79 +1,58 @@
 import { api } from '@/shared/lib/api'
 import type { ApiResponse } from '@/shared/types/api.types'
+import {
+  mapCarrito,
+  mapValidacionCarrito,
+  type RawCarrito,
+  type RawValidacionCarrito,
+  type CarritoItemMapped,
+  type ValidacionCarritoMapped,
+} from '@/shared/lib/mappers'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Re-export para que los hooks no dependan directo de mappers ─────────────
 
-export interface CarritoItemBackend {
-  id: number
-  carritoId: number
-  varianteId: number
-  cantidad: number
-  precioUnitario: number
-  descuento: number
-  variante: {
-    id: number
-    productoId: string
-    color: string
-    codigoHex: string
-    stock: number
-    sku: string
-    talla: { id: number; nombre: string }
-    producto: {
-      id: string
-      nombre: string
-      slug: string
-      precio: number
-      fotos: { id: number; url: string; esPrincipal: boolean; orden: number }[]
-      porcentajeDescuentoActivo?: number
-    }
-  }
-}
-
-export interface CarritoBackend {
-  id: number
-  clienteId: number
-  items: CarritoItemBackend[]
-}
-
-export interface CarritoValidacion {
-  valid: boolean
-  errors: { varianteId: number; message: string }[]
-}
+export type { CarritoItemMapped, ValidacionCarritoMapped }
 
 // ─── API Functions ───────────────────────────────────────────────────────────
+// El backend devuelve el carrito completo (con resumen) en cada mutación.
+// Devolvemos siempre la lista normalizada de items para que el caller
+// haga `setItems(...)` sin más mapeos.
 
-export async function getCarrito(): Promise<CarritoBackend> {
-  const res = await api.get<ApiResponse<CarritoBackend>>('/carrito')
-  return res.data.data
+export async function getCarrito(): Promise<CarritoItemMapped[]> {
+  const res = await api.get<ApiResponse<RawCarrito>>('/carrito')
+  return mapCarrito(res.data.data)
 }
 
 export async function addItem(payload: {
-  varianteId: number
+  id_variante: number
   cantidad: number
-}): Promise<CarritoItemBackend> {
-  const res = await api.post<ApiResponse<CarritoItemBackend>>('/carrito/items', payload)
-  return res.data.data
+}): Promise<CarritoItemMapped[]> {
+  const res = await api.post<ApiResponse<RawCarrito>>('/carrito/items', payload)
+  return mapCarrito(res.data.data)
 }
 
 export async function updateCantidad(
-  itemId: number,
+  idCarritoDet: number,
   cantidad: number,
-): Promise<CarritoItemBackend> {
-  const res = await api.put<ApiResponse<CarritoItemBackend>>(`/carrito/items/${itemId}`, {
-    cantidad,
-  })
-  return res.data.data
+): Promise<CarritoItemMapped[]> {
+  const res = await api.put<ApiResponse<RawCarrito>>(
+    `/carrito/items/${idCarritoDet}`,
+    { cantidad },
+  )
+  return mapCarrito(res.data.data)
 }
 
-export async function removeItem(itemId: number): Promise<void> {
-  await api.delete(`/carrito/items/${itemId}`)
+export async function removeItem(idCarritoDet: number): Promise<CarritoItemMapped[]> {
+  const res = await api.delete<ApiResponse<RawCarrito>>(`/carrito/items/${idCarritoDet}`)
+  return mapCarrito(res.data.data)
 }
 
-export async function clearCarrito(): Promise<void> {
-  await api.delete('/carrito')
+export async function clearCarrito(): Promise<CarritoItemMapped[]> {
+  const res = await api.delete<ApiResponse<RawCarrito>>('/carrito')
+  return mapCarrito(res.data.data)
 }
 
-export async function validarCarrito(): Promise<CarritoValidacion> {
-  const res = await api.get<ApiResponse<CarritoValidacion>>('/carrito/validar')
-  return res.data.data
+export async function validarCarrito(): Promise<ValidacionCarritoMapped> {
+  const res = await api.get<ApiResponse<RawValidacionCarrito>>('/carrito/validar')
+  return mapValidacionCarrito(res.data.data)
 }

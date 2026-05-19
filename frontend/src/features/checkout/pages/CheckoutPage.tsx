@@ -95,8 +95,8 @@ export function CheckoutPage() {
                     Algunos productos tienen cambios
                   </p>
                   <ul className="space-y-1">
-                    {validationErrors.map((err) => (
-                      <li key={err.varianteId} className="text-xs text-text-secondary dark:text-text-secondary-dark">
+                    {validationErrors.map((err, i) => (
+                      <li key={err.idItem ?? `err-${i}`} className="text-xs text-text-secondary dark:text-text-secondary-dark">
                         {err.message}
                       </li>
                     ))}

@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateCantidad as apiUpdateCantidad } from '@/features/carrito/api/carritoApi'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
+import type { CarritoItemMapped } from '@/features/carrito/api/carritoApi'
 import { useToast } from '@/shared/hooks/useToast'
 
 /**
@@ -11,6 +12,7 @@ import { useToast } from '@/shared/hooks/useToast'
 export function useUpdateCantidad() {
   const queryClient = useQueryClient()
   const updateOptimistic = useCarritoStore((s) => s.updateCantidadOptimistic)
+  const setItems = useCarritoStore((s) => s.setItems)
   const { error } = useToast()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -20,12 +22,13 @@ export function useUpdateCantidad() {
     mutationFn: ({ itemId, cantidad }: { itemId: number; cantidad: number }) =>
       apiUpdateCantidad(itemId, cantidad),
 
-    onError: () => {
-      error('No pudimos actualizar la cantidad')
-      queryClient.invalidateQueries({ queryKey: ['carrito'] })
+    onSuccess: (data: CarritoItemMapped[]) => {
+      setItems(data)
+      queryClient.setQueryData(['carrito'], data)
     },
 
-    onSettled: () => {
+    onError: () => {
+      error('No pudimos actualizar la cantidad')
       queryClient.invalidateQueries({ queryKey: ['carrito'] })
     },
   })

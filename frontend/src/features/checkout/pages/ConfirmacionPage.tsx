@@ -142,7 +142,7 @@ export function ConfirmacionPage() {
             {factura.items.map((item, i) => (
               <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b last:border-b-0 border-border-base dark:border-border-base-dark">
                 <div>
-                  <p className="text-sm text-text-primary dark:text-text-primary-dark">{item.nombre}</p>
+                  <p className="text-sm text-text-primary dark:text-text-primary-dark">{item.productoNombre}</p>
                   <p className="text-xs text-text-muted dark:text-text-muted-dark">
                     {item.color} · {item.talla} · x{item.cantidad}
                   </p>
