@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
-import { Loader2, CreditCard, ChevronLeft, AlertCircle, Info } from 'lucide-react'
+import { Loader2, CreditCard, AlertCircle, Info } from 'lucide-react'
 import {
   iniciarPago,
   capturarPayPal,
@@ -10,76 +10,86 @@ import {
   type MetodoPago,
 } from '@/features/checkout/api/checkoutApi'
 
-interface PagoStepProps {
-  direccionId: number
-  onSuccess: (metodo: MetodoPago, idFactura: string) => void
-  onBack: () => void
+export type PagoTab = 'PAYPAL' | 'TARJETA'
+
+export interface PagoSectionHandle {
+  /** Cobrar con tarjeta. Devuelve idFactura o null si falla la validación. */
+  payCard: (direccionId: number) => Promise<string | null>
 }
 
-type Tab = 'PAYPAL' | 'TARJETA'
+interface PagoSectionProps {
+  tab: PagoTab
+  onTabChange: (tab: PagoTab) => void
+  /** Llamado cuando PayPal completa con éxito */
+  onPayPalSuccess: (metodo: MetodoPago, idFactura: string) => void
+  /** Resuelve la dirección (creando una nueva si el cliente tiene el form abierto). Devuelve null si la validación falla. */
+  commitDireccion: () => Promise<number | null>
+}
 
 const PAYPAL_AVAILABLE = !!import.meta.env.VITE_PAYPAL_CLIENT_ID
 
-export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
-  const [tab, setTab] = useState<Tab>(PAYPAL_AVAILABLE ? 'PAYPAL' : 'TARJETA')
+export const PagoSection = forwardRef<PagoSectionHandle, PagoSectionProps>(function PagoSection(
+  { tab, onTabChange, onPayPalSuccess, commitDireccion },
+  ref,
+) {
   const [error, setError] = useState<string | null>(null)
+  const [card, setCard] = useState({ numero: '', titular: '', exp: '', cvv: '' })
 
-  // PayPal SDK status (for nicer fallback messaging)
   const [{ isPending, isRejected }] = usePayPalScriptReducer()
 
-  // ─── PayPal: crear orden ────────────────────────────────────────────────
+  // PayPal: crear orden (necesita dirección al momento del click)
   const createOrderMutation = useMutation({
-    mutationFn: () => iniciarPago({ id_direccion_envio: direccionId, metodo_pago: 'PAYPAL' }),
+    mutationFn: (direccionId: number) =>
+      iniciarPago({ id_direccion_envio: direccionId, metodo_pago: 'PAYPAL' }),
   })
 
-  // ─── PayPal: capturar ───────────────────────────────────────────────────
   const captureMutation = useMutation({
-    mutationFn: (paypal_order_id: string) =>
+    mutationFn: ({ direccionId, paypal_order_id }: { direccionId: number; paypal_order_id: string }) =>
       capturarPayPal({ id_direccion_envio: direccionId, paypal_order_id }),
-    onSuccess: (data) => onSuccess('PAYPAL', data.id_factura),
+    onSuccess: (data) => onPayPalSuccess('PAYPAL', data.id_factura),
     onError: (e: Error) => setError(e.message || 'Error capturando pago PayPal'),
   })
 
-  // ─── Tarjeta simulada ───────────────────────────────────────────────────
   const tarjetaMutation = useMutation({
-    mutationFn: () => confirmarTarjetaSimulada({ id_direccion_envio: direccionId }),
-    onSuccess: (data) => onSuccess('TARJETA', data.id_factura),
-    onError: (e: Error) => setError(e.message || 'Error procesando tarjeta'),
+    mutationFn: (direccionId: number) =>
+      confirmarTarjetaSimulada({ id_direccion_envio: direccionId }),
   })
 
-  const [card, setCard] = useState({ numero: '', titular: '', exp: '', cvv: '' })
-
-  const handleTarjetaSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    if (!card.numero || !card.titular || !card.exp || !card.cvv) {
-      setError('Completa todos los campos de la tarjeta')
-      return
-    }
-    tarjetaMutation.mutate()
-  }
+  useImperativeHandle(ref, () => ({
+    async payCard(direccionId: number) {
+      setError(null)
+      if (!card.numero || !card.titular || !card.exp || !card.cvv) {
+        setError('Completa todos los campos de la tarjeta')
+        return null
+      }
+      if (card.numero.length < 13) {
+        setError('Número de tarjeta inválido')
+        return null
+      }
+      try {
+        const res = await tarjetaMutation.mutateAsync(direccionId)
+        return res.id_factura
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Error procesando tarjeta')
+        return null
+      }
+    },
+  }))
 
   return (
-    <div className="p-6 rounded-lg border border-border-base dark:border-border-base-dark bg-bg-card dark:bg-bg-card-dark">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">
-          Método de pago
-        </h2>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1 text-sm text-text-secondary dark:text-text-secondary-dark hover:text-text-primary dark:hover:text-text-primary-dark"
-        >
-          <ChevronLeft className="h-4 w-4" /> Cambiar dirección
-        </button>
-      </div>
+    <section
+      id="seccion-pago"
+      className="p-6 rounded-lg border border-border-base dark:border-border-base-dark bg-bg-card dark:bg-bg-card-dark"
+    >
+      <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-4">
+        Método de pago
+      </h2>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-border-base dark:border-border-base-dark">
         <TabButton
           active={tab === 'PAYPAL'}
           onClick={() => {
-            setTab('PAYPAL')
+            onTabChange('PAYPAL')
             setError(null)
           }}
           icon={<PayPalLogoMark />}
@@ -88,7 +98,7 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
         <TabButton
           active={tab === 'TARJETA'}
           onClick={() => {
-            setTab('TARJETA')
+            onTabChange('TARJETA')
             setError(null)
           }}
           icon={<CreditCard className="h-4 w-4" />}
@@ -107,18 +117,18 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
         </motion.div>
       )}
 
-      {/* ─── PayPal ──────────────────────────────────────────────────── */}
+      {/* PayPal */}
       {tab === 'PAYPAL' && (
         <div className="space-y-4">
           <p className="text-sm text-text-secondary dark:text-text-secondary-dark">
-            Paga de forma segura con tu cuenta PayPal o tarjeta sin necesidad de registrarte.
+            Paga de forma segura con tu cuenta PayPal o tarjeta sin necesidad de registrarte. Usa el botón de PayPal para finalizar.
           </p>
 
           {!PAYPAL_AVAILABLE && (
             <div className="p-3 rounded border border-status-warning dark:border-status-warning-dark bg-status-warning-bg dark:bg-status-warning-bg-dark text-sm text-status-warning dark:text-status-warning-dark flex items-start gap-2">
               <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <span>
-                PayPal no está configurado en este entorno. Usa Tarjeta simulada para finalizar el pedido.
+                PayPal no está configurado en este entorno. Usa Tarjeta para finalizar el pedido.
               </span>
             </div>
           )}
@@ -142,10 +152,15 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
                 disabled={captureMutation.isPending}
                 createOrder={async () => {
                   setError(null)
-                  const result = await createOrderMutation.mutateAsync()
+                  const direccionId = await commitDireccion()
+                  if (!direccionId) {
+                    setError('Selecciona o completa una dirección de envío antes de pagar con PayPal')
+                    throw new Error('Falta dirección')
+                  }
+                  const result = await createOrderMutation.mutateAsync(direccionId)
                   if (result.paypal_stub) {
                     setError(
-                      'PayPal no está configurado en el servidor (modo demo). Usa Tarjeta simulada para finalizar el pedido.',
+                      'PayPal no está configurado en el servidor (modo demo). Usa Tarjeta para finalizar el pedido.',
                     )
                     throw new Error('PayPal en modo stub — backend sin credenciales')
                   }
@@ -155,7 +170,15 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
                   return result.paypal_order_id
                 }}
                 onApprove={async (data) => {
-                  await captureMutation.mutateAsync(data.orderID)
+                  const direccionId = await commitDireccion()
+                  if (!direccionId) {
+                    setError('Falta dirección de envío')
+                    return
+                  }
+                  await captureMutation.mutateAsync({
+                    direccionId,
+                    paypal_order_id: data.orderID,
+                  })
                 }}
                 onError={(err) => {
                   setError(typeof err === 'object' && err && 'message' in err ? String(err.message) : 'Error en PayPal')
@@ -172,9 +195,9 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
         </div>
       )}
 
-      {/* ─── Tarjeta simulada ─────────────────────────────────────────── */}
+      {/* Tarjeta */}
       {tab === 'TARJETA' && (
-        <form onSubmit={handleTarjetaSubmit} className="space-y-4 max-w-md">
+        <div className="space-y-4 max-w-md">
           <div className="p-3 rounded border border-border-base dark:border-border-base-dark bg-bg-hover/40 dark:bg-bg-hover-dark/40 text-xs text-text-muted dark:text-text-muted-dark flex items-start gap-2">
             <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
             <span>
@@ -216,25 +239,11 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
               type="password"
             />
           </div>
-
-          <button
-            type="submit"
-            disabled={tarjetaMutation.isPending}
-            className="w-full py-2.5 rounded bg-text-primary dark:bg-text-primary-dark text-bg-base dark:text-bg-base-dark text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {tarjetaMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Procesando…
-              </>
-            ) : (
-              'Pagar con tarjeta'
-            )}
-          </button>
-        </form>
+        </div>
       )}
-    </div>
+    </section>
   )
-}
+})
 
 // ─── Subcomponents ─────────────────────────────────────────────────────────
 

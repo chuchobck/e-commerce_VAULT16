@@ -1,20 +1,10 @@
-import { Edit2 } from 'lucide-react'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
-import type { CheckoutStep } from '@/features/checkout/hooks/useCheckout'
 
 interface ResumenOrdenProps {
   direccionLabel?: string
-  metodoPago?: 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA' | null
-  onEditStep: (step: CheckoutStep) => void
-  currentStep: CheckoutStep
 }
 
-export function ResumenOrden({
-  direccionLabel,
-  metodoPago,
-  onEditStep,
-  currentStep,
-}: ResumenOrdenProps) {
+export function ResumenOrden({ direccionLabel }: ResumenOrdenProps) {
   const items = useCarritoStore((s) => s.items)
   const getSubtotal = useCarritoStore((s) => s.getSubtotal)
   const getDescuentoTotal = useCarritoStore((s) => s.getDescuentoTotal)
@@ -78,44 +68,10 @@ export function ResumenOrden({
         </div>
       </div>
 
-      {/* Selected info */}
-      {direccionLabel && currentStep !== 'direccion' && (
-        <div className="flex items-center justify-between py-2 border-t border-border-base dark:border-border-base-dark">
-          <div>
-            <p className="text-xs text-text-muted dark:text-text-muted-dark">Envío a</p>
-            <p className="text-sm text-text-primary dark:text-text-primary-dark">{direccionLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onEditStep('direccion')}
-            className="p-1 text-text-muted dark:text-text-muted-dark hover:text-accent transition-colors"
-            aria-label="Editar dirección"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
-
-      {metodoPago && currentStep === 'confirmacion' && (
-        <div className="flex items-center justify-between py-2 border-t border-border-base dark:border-border-base-dark">
-          <div>
-            <p className="text-xs text-text-muted dark:text-text-muted-dark">Método de pago</p>
-            <p className="text-sm text-text-primary dark:text-text-primary-dark">
-              {metodoPago === 'TARJETA'
-                ? 'Tarjeta de crédito/débito'
-                : metodoPago === 'PAYPAL'
-                  ? 'PayPal'
-                  : 'Transferencia bancaria'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onEditStep('pago')}
-            className="p-1 text-text-muted dark:text-text-muted-dark hover:text-accent transition-colors"
-            aria-label="Editar método de pago"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </button>
+      {direccionLabel && (
+        <div className="py-2 border-t border-border-base dark:border-border-base-dark">
+          <p className="text-xs text-text-muted dark:text-text-muted-dark">Envío a</p>
+          <p className="text-sm text-text-primary dark:text-text-primary-dark">{direccionLabel}</p>
         </div>
       )}
     </div>
