@@ -26,18 +26,18 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SEED"
 
 echo "▶ Verificando conteos …"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At <<'SQL'
-SELECT 'roles       = ' || COUNT(*) FROM vortex.rol;
-SELECT 'categorias  = ' || COUNT(*) FROM vortex.categoria;
-SELECT 'tallas      = ' || COUNT(*) FROM vortex.talla;
-SELECT 'empleados   = ' || COUNT(*) FROM vortex.empleado;
-SELECT 'ubicaciones = ' || COUNT(*) FROM vortex.ubicacion;
-SELECT 'usuarios_bo = ' || COUNT(*) FROM vortex.usuarios_backoffice;
-SELECT 'clientes    = ' || COUNT(*) FROM vortex.cliente;
-SELECT 'productos   = ' || COUNT(*) FROM vortex.producto;
-SELECT 'variantes   = ' || COUNT(*) FROM vortex.variante_producto;
-SELECT 'promociones = ' || COUNT(*) FROM vortex.promocion;
+SET search_path TO vortex, public;
+SELECT 'roles               = ' || COUNT(*) FROM rol;
+SELECT 'categoria_producto  = ' || COUNT(*) FROM categoria_producto;
+SELECT 'tallas              = ' || COUNT(*) FROM talla;
+SELECT 'empleados           = ' || COUNT(*) FROM empleado;
+SELECT 'usuarios_backoffice = ' || COUNT(*) FROM usuarios_backoffice;
+SELECT 'clientes            = ' || COUNT(*) FROM cliente;
+SELECT 'productos           = ' || COUNT(*) FROM producto;
+SELECT 'variantes           = ' || COUNT(*) FROM variante_producto;
+SELECT 'promociones         = ' || COUNT(*) FROM promocion;
 SQL
 
 echo "✅ Bootstrap completo."
 echo "   Esperado: 24 productos / 142 variantes / 6 promos / 5 backoffice / 1 cliente."
-echo "   Credenciales: Backoffice → Vault16Admin!   Cliente test → Vault16Test!"
+echo "   Credenciales: Backoffice → Vault16Admin!   Cliente test (test@vault16.ec) → Vault16Test!"
