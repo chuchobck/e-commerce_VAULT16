@@ -73,6 +73,15 @@ export async function iniciarPago(payload: {
   id_direccion_envio: number
   metodo_pago: MetodoPago
 }): Promise<IniciarPagoResponse> {
+  // PayPal usa el endpoint canónico /api/pagos/paypal/create-order;
+  // tarjeta y transferencia siguen el flujo unificado de checkout.
+  if (payload.metodo_pago === 'PAYPAL') {
+    const res = await api.post<ApiResponse<IniciarPagoResponse>>(
+      '/api/pagos/paypal/create-order',
+      { id_direccion_envio: payload.id_direccion_envio },
+    )
+    return res.data.data
+  }
   const res = await api.post<ApiResponse<IniciarPagoResponse>>('/api/checkout/iniciar-pago', payload)
   return res.data.data
 }
@@ -82,8 +91,8 @@ export async function capturarPayPal(payload: {
   paypal_order_id: string
 }): Promise<{ id_factura: string; total: number; estado: string }> {
   const res = await api.post<ApiResponse<{ id_factura: string; total: number; estado: string }>>(
-    '/api/checkout/paypal/capturar',
-    payload,
+    `/api/pagos/paypal/capture-order/${encodeURIComponent(payload.paypal_order_id)}`,
+    { id_direccion_envio: payload.id_direccion_envio },
   )
   return res.data.data
 }
