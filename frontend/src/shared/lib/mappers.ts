@@ -183,6 +183,8 @@ export interface RawPromocion {
   }>
 }
 
+export type PromocionEstado = 'VIGENTE' | 'PROXIMA' | 'FINALIZADA'
+
 export interface PromocionMapped {
   id: number
   nombre: string
@@ -191,6 +193,13 @@ export interface PromocionMapped {
   fechaInicio: string
   fechaFin: string
   activa: boolean
+  /**
+   * Estado computado en base a estado + ventana de fechas:
+   *  - VIGENTE    : estado ACT y hoy ∈ [fecha_inicio, fecha_fin]
+   *  - PROXIMA    : estado ACT y hoy < fecha_inicio
+   *  - FINALIZADA : estado ACT y hoy > fecha_fin (o estado != ACT)
+   */
+  estado: PromocionEstado
   productos: Array<{
     id: string
     nombre: string
@@ -559,6 +568,16 @@ export function mapConfirmacionPedido(raw: RawFacturaFull): ConfirmacionPedidoMa
 }
 
 export function mapPromocion(raw: RawPromocion): PromocionMapped {
+  const now = Date.now()
+  const inicio = new Date(raw.fecha_inicio).getTime()
+  const fin = new Date(raw.fecha_fin).getTime()
+  const activa = raw.estado === 'ACT'
+  let estado: PromocionEstado = 'FINALIZADA'
+  if (activa) {
+    if (now < inicio) estado = 'PROXIMA'
+    else if (now > fin) estado = 'FINALIZADA'
+    else estado = 'VIGENTE'
+  }
   return {
     id: raw.id_promocion,
     nombre: raw.nombre,
@@ -566,7 +585,8 @@ export function mapPromocion(raw: RawPromocion): PromocionMapped {
     porcentaje: toNumber(raw.porcentaje_descuento),
     fechaInicio: raw.fecha_inicio,
     fechaFin: raw.fecha_fin,
-    activa: raw.estado === 'ACT',
+    activa,
+    estado,
     productos: (raw.promocion_detalle ?? []).map((d) => ({
       id: d.producto.id_producto,
       nombre: d.producto.nombre,

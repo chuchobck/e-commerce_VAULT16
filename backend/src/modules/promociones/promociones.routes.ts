@@ -14,8 +14,15 @@ export const promocionesRouter = Router();
 const adminOVendedor = [authBackoffice, requireRole('ADMIN', 'VENDEDOR')];
 
 // ─── Lectura pública ──────────────────────────────────────────────────────────
-// GET /api/promociones → solo vigentes y activas (público)
-promocionesRouter.get('/', controller.getVigentes);
+// GET /api/promociones → promociones públicas (estado='ACT', sin importar
+//   ventana de fechas) para que el storefront muestre cards con badge
+//   Vigente / Próxima / Finalizada según fecha_inicio/fecha_fin.
+//   Excluye las INA (soft-deleted): no se exponen al cliente final.
+promocionesRouter.get('/', controller.getPublicas);
+
+// GET /api/promociones/vigentes → solo en ventana de fechas (compat para
+//   consumidores que necesiten exclusivamente las vigentes ahora)
+promocionesRouter.get('/vigentes', controller.getVigentes);
 
 // ─── Lectura admin ────────────────────────────────────────────────────────────
 // GET /api/promociones/all → todas (incluyendo INA y vencidas)

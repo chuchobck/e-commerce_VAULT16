@@ -20,6 +20,15 @@ export async function getAll(_req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function getPublicas(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await service.findPublicas();
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getById(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseInt(req.params.id, 10);

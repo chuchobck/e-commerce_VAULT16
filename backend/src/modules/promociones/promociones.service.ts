@@ -52,6 +52,20 @@ export async function findAll() {
   });
 }
 
+/**
+ * Lectura pública para el storefront: incluye promos en estado 'ACT'
+ * independientemente de la ventana de fechas, para poder mostrarlas como
+ * "Vigente / Próxima / Finalizada" según el rango. Excluye las soft-deleted
+ * (estado='INA'), que no deben filtrarse al cliente final.
+ */
+export async function findPublicas() {
+  return prisma.promocion.findMany({
+    where: { estado: 'ACT' },
+    include: promocionInclude,
+    orderBy: { fecha_inicio: 'desc' },
+  });
+}
+
 export async function findById(id: number) {
   const promo = await prisma.promocion.findUnique({
     where: { id_promocion: id },

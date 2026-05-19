@@ -1,0 +1,104 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "pgb_ZO8kcSvbe8UPWYkQf"
+uri = "file://frontend/public/imagenes/p000008_tee_glitch.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "AohIO2s1EoCnn3QI0s7Sm"
+uri = "file://frontend/public/imagenes/p000009_cargo_sombra.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "BMq1QBMuPPE6Q50oz4ZBw"
+uri = "file://frontend/public/imagenes/p000010_jogger_estatico.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "FxSlOX6GYI3kpup1P870I"
+uri = "file://frontend/public/imagenes/p000011_cargo_bunker.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YvN7oCClX1ZwmBOeqIOgv"
+uri = "file://frontend/public/imagenes/p000012_jogger_eclipse.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "iHtBPyIceYQJg-hWYXVN7"
+uri = "file://frontend/public/imagenes/p000013_jacket_bunker.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GGL6fWtOqn-jJ7W2sMRMj"
+uri = "file://frontend/public/imagenes/p000014_bomber_ceniza.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "UgIPyltZJoHVHw3kO9oP2"
+uri = "file://frontend/public/imagenes/p000015_jacket_cortaviento.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "lTwfLUkPsDBp8Rm8dCH3G"
+uri = "file://frontend/public/imagenes/p000016_jacket_ripstop.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EDlG38t5GFQZBomPC8phm"
+uri = "file://frontend/public/imagenes/p000017_cap_signal.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "0Ap3R_WNDcNSZPwnk24k1"
+uri = "file://frontend/public/imagenes/p000018_beanie_void.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ah1YenXbqYDr8fkHw7ntA"
+uri = "file://frontend/public/imagenes/p000019_tote_sombra.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "VAIMZkNX-c-I0Ym42NZ7d"
+uri = "file://frontend/public/imagenes/p000020_cap_bucket_shade.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Zx8KBTbL7sDdMD8xxZZI3"
+uri = "file://frontend/public/imagenes/p000021_set_phantom.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "MTDau7BI9kfiQgZXCoRqh"
+uri = "file://frontend/public/imagenes/p000022_set_void_crop.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hqNI5X7ORjsFW0XwOCpmp"
+uri = "file://frontend/public/imagenes/p000023_set_static.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EkPPyJm6x4S4LWlB0QZd1"
+uri = "file://frontend/public/imagenes/p000024_set_bunker.png"
+type = "image"
+title = "generated_image"

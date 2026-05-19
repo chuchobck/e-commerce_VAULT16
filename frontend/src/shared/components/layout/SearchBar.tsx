@@ -81,10 +81,10 @@ export function SearchBar() {
 
   return (
     <>
-      {/* Desktop search — always visible */}
+      {/* Desktop search — ancho fijo, centrado por el grid del Header */}
       <form
         onSubmit={handleSubmit}
-        className="hidden sm:flex flex-1 max-w-prose mx-6"
+        className="hidden sm:flex w-full"
         role="search"
       >
         <div className="relative w-full">
