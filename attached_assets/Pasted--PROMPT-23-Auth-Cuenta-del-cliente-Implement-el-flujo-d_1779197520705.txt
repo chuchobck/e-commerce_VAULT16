@@ -1,0 +1,311 @@
+ PROMPT 23 — Auth + Cuenta del cliente
+
+```
+Implementá el flujo de auth completo + área de cuenta logueada.
+
+ARCHIVOS DE AUTH:
+
+1. src/features/auth/stores/authStore.ts (Zustand persist)
+   interface AuthStore {
+     cliente: Cliente | null
+     token: string | null
+     isAuthenticated: boolean
+     login: (cliente, token) => void
+     logout: () => void
+     updateProfile: (cambios) => void
+   }
+   Persiste cliente + token en localStorage.
+   Al login → llama a carritoStore.mergeLocalWithBackend()
+
+2. src/features/auth/api/authApi.ts
+   - loginCliente, registerCliente, verifyEmail, forgotPassword, resetPassword
+   - Endpoints del backend del Día 1
+
+3. src/features/auth/schemas/auth.schemas.ts
+   Zod schemas:
+   - LoginSchema: email + password
+   - RegisterSchema: email + password (min 8 + 1 may + 1 num) + ruc_cedula (10 o 13 digitos) + nombre1 + apellido1 + telefono?
+   - ForgotPasswordSchema: email
+   - ResetPasswordSchema: password + confirmPassword (refine: deben coincidir)
+
+4. src/features/auth/hooks/
+   - useLogin, useRegister, useVerifyEmail, useForgotPassword, useResetPassword
+   - Cada uno useMutation + manejo de errores específicos
+
+5. src/features/auth/components/LoginForm.tsx
+   - react-hook-form + zod
+   - Email + password con show/hide
+   - "¿Olvidaste tu contraseña?" → /forgot-password
+   - "¿No tenés cuenta? Registrate" → /register
+   - Manejo de error EMAIL_NOT_VERIFIED → muestra "Verificá tu email · Reenviar"
+
+6. src/features/auth/components/RegisterForm.tsx
+   - Form con todos los campos
+   - Validaciones inline (mostrar reglas de password al typear)
+   - Acepta términos checkbox
+   - Después de submit exitoso → muestra "Te enviamos un email · Verificalo para activar tu cuenta"
+   - El backend en dev loggea el link de verificación a consola
+
+7. src/features/auth/components/ForgotPasswordForm.tsx
+   - Solo email
+   - Después de submit: mensaje genérico "Si el email existe, te llegó un link"
+
+8. src/features/auth/components/ResetPasswordForm.tsx
+   - Lee :token de URL
+   - Password + confirmPassword
+   - Después de OK: redirect a /login con flash "Contraseña actualizada"
+
+9. src/features/auth/pages/
+   - LoginPage, RegisterPage, VerifyEmailPage (consume :token), 
+     ForgotPasswordPage, ResetPasswordPage
+   - Layout especial sin Header (AuthLayout):
+     • Centered card max-w-modal
+     • Logo VAULT 16 arriba
+     • Form en el centro
+     • Background con SVG art sutil
+
+10. src/shared/components/layout/AuthLayout.tsx
+    Layout sin Header/Footer normal, usado solo para rutas de auth.
+
+11. src/shared/components/layout/ProtectedRoute.tsx
+    HOC que verifica isAuthenticated:
+    - Si no auth → redirect a /login con returnUrl=current
+    - Si auth pero email_verificado = false → redirect a /verify-email-pending
+
+ARCHIVOS DE CUENTA:
+
+12. src/features/cuenta/components/CuentaSidebar.tsx
+    Sidebar persistente del área de cuenta. Items:
+    - 👤 Perfil          → /mi-cuenta
+    - 📍 Direcciones     → /mi-cuenta/direcciones
+    - 🔒 Seguridad       → /mi-cuenta/seguridad
+    - 📦 Mis pedidos     → /mi-cuenta/pedidos
+    
+    NavLink active state. En mobile: collapsa a botones tabs arriba.
+
+13. src/features/cuenta/components/PerfilForm.tsx
+    Edita: nombre1, apellido1, telefono.
+    NO permite cambiar email (eso es flujo separado, no MVP).
+    Mostrar email + ruc_cedula como read-only.
+
+14. src/features/cuenta/components/DireccionesList.tsx
+    - Lista de direcciones del cliente
+    - Cada card: alias, dirección completa, badge "Principal" si aplica
+    - Botones: Editar / Eliminar / Marcar como principal
+    - Botón grande "+ Agregar dirección"
+
+15. src/features/cuenta/components/DireccionForm.tsx
+    Modal o página separada con form:
+    - alias (ej. "Casa", "Oficina")
+    - calle_principal, numeracion, calle_secundaria?
+    - referencia?
+    - barrio?, ciudad, provincia, pais (default Ecuador), codigo_postal?
+    - es_principal checkbox
+
+16. src/features/cuenta/components/CambiarPasswordForm.tsx
+    - oldPassword + newPassword + confirmPassword
+    - Validación: newPassword !== oldPassword
+
+17. src/features/cuenta/pages/PerfilPage, DireccionesPage, SeguridadPage
+
+18. src/features/pedidos/components/
+    - PedidoCard: id_factura, fecha, total, estado badge
+    - PedidoDetalle: cabecera + items + tracking timeline
+    - EstadoTimeline: visualización EMI → PAG → ENV → ENT con dots
+
+19. src/features/pedidos/pages/PedidosPage, PedidoDetailPage
+
+20. src/shared/components/layout/CuentaLayout.tsx
+    EcommerceLayout + sidebar adicional.
+    Path: /mi-cuenta/* protegido.
+
+UPDATES:
+- src/app/router.tsx: agregar todas las rutas
+- UserMenu del Header: ahora conecta con authStore (los stubs del prompt 18 se reemplazan)
+
+VALIDACIÓN:
+- Login funciona, redirige a returnUrl si vino de protected
+- Register → email pendiente → verify (botón "ya verifiqué" recarga el cliente)
+- ResetPassword cierra el flow correctamente
+- Cuenta se ve bien en mobile (sidebar collapsa)
+- ProtectedRoute funciona en /mi-cuenta/* y /checkout
+```
+
+---
+
+## 🟢 PROMPT 24 — Checkout flow (Stripe)
+
+```
+Implementá el flujo de checkout completo con Stripe Elements.
+
+ESTRUCTURA EN 3 STEPS:
+1. Dirección de envío
+2. Pago (Stripe)
+3. Confirmación
+
+ARCHIVOS:
+
+1. src/features/checkout/components/CheckoutSteps.tsx
+   - Stepper visual arriba: ●─●─○ con labels
+   - Estado actual destacado en accent
+   - Steps anteriores clickeables, siguientes no
+
+2. src/features/checkout/components/DireccionStep.tsx
+   - Lista de direcciones del cliente (DireccionesList read-only)
+   - Selector radio: cuál usar como envío
+   - Botón "+ Agregar dirección nueva" → abre DireccionForm modal
+   - Si no hay direcciones: empty state + "Agregar dirección" obligatorio
+   - Botón "Continuar al pago" disabled hasta seleccionar una
+
+3. src/features/checkout/components/ResumenOrden.tsx
+   Sticky a la derecha durante todo el checkout:
+   - Items del carrito (lista compacta)
+   - Subtotal, descuentos, total
+   - Datos de envío (cuando ya seleccionó)
+   - Método de pago (cuando ya seleccionó)
+   - Edit pencil para volver a steps anteriores
+
+4. src/features/checkout/components/PagoStep.tsx
+   Selector de método:
+   - Tarjeta (Stripe) — recommended badge
+   - Transferencia bancaria — instrucciones manual
+
+   Si Tarjeta:
+   - Inicializa Stripe con la pk del env
+   - Componente <StripePaymentForm /> con CardElement
+   - POST /api/checkout/iniciar-pago → recibe client_secret
+   - stripe.confirmCardPayment(client_secret, ...)
+   - Si OK → backend recibe webhook → backend confirma orden
+     Mientras tanto: mostrar "Procesando..." con spinner
+   - Si error: mostrar mensaje, permitir reintentar
+
+   Si Transferencia:
+   - Mostrar datos bancarios (cuenta de VAULT 16)
+   - POST /api/checkout/iniciar-pago con metodo_pago='TRANSFERENCIA'
+   - Recibe id_factura, instrucciones
+   - Mostrar instrucciones + botón "Marcar como transferida"
+   - Al click: redirect a /checkout/confirmacion/:idFactura
+     (el admin después debe confirmar el pago manualmente)
+
+5. src/features/checkout/components/StripePaymentForm.tsx
+   - Wrap en <Elements stripe={stripePromise}>
+   - <PaymentElement /> de Stripe
+   - Botón "Pagar $XXX.XX"
+   - Loading state, error handling
+   - Si Stripe key es 'pk_test_placeholder' → mostrar warning visible:
+     "MODO STUB · Stripe no está configurado. La transacción será simulada."
+     Y simular el pago llamando directo al endpoint /api/checkout/confirmar
+     (Esto es para que el flujo funcione end-to-end mientras no haya key real.)
+
+6. src/features/checkout/hooks/useCheckout.ts
+   - Estado del checkout (currentStep, direccion, metodo)
+   - Funciones nextStep, prevStep, completeCheckout
+
+7. src/features/checkout/hooks/useCreatePaymentIntent.ts
+   - useMutation que llama al backend
+   - Cachea el client_secret (no crear múltiples PaymentIntents en re-renders)
+
+8. src/features/checkout/api/checkoutApi.ts
+   - preview, iniciarPago, confirmar (interno por webhook)
+
+9. src/features/checkout/pages/CheckoutPage.tsx
+   - Layout: stepper arriba, step actual + ResumenOrden a la derecha
+   - Protegido (requiere auth + email verificado + carrito no vacío)
+   - Pre-validación al montar: GET /api/carrito/validar
+     Si hay problemas (stock cambió, precio cambió) → mostrar warnings antes de continuar
+
+10. src/features/checkout/pages/ConfirmacionPage.tsx
+    - Recibe :idFactura
+    - Loading: poll cada 2s GET /api/facturas/me/:id hasta estado='PAG' (max 30s)
+    - Cuando confirmado:
+      • Animación check verde grande con framer-motion
+      • "¡Listo! Tu pedido es #001-001-000000123"
+      • Resumen del pedido
+      • Botones: "Ver pedido" (→ /mi-cuenta/pedidos/:id) / "Seguir comprando"
+      • Si transferencia: instrucciones de pago + "Te avisaremos cuando confirmemos"
+
+VALIDACIÓN:
+- Flujo completo: carrito → checkout → dirección → pago → confirmación
+- Con Stripe stub: el flujo termina sin errores
+                                                - Si stock se acabó entre carrito y checkout: error claro + opción de quitar item
+                                                - Edge case: usuario hace back, no se duplica orden
+                                                - Email de confirmación (TODO backend, por ahora solo console)
+                                                ```
+
+                                                ---
+
+## 🟢 PROMPT 25 — Promociones + Páginas estáticas + Búsqueda
+
+```
+Implementá las páginas restantes que faltan para completar el sitio.
+
+ARCHIVOS:
+
+1. src/features/promociones/components/PromocionBanner.tsx
+   - Banner full-width destacado por promo
+   - Imagen procedural SVG con el nombre del drop
+   - Fechas vigentes
+   - CTA "Ver productos"
+
+2. src/features/promociones/components/PromocionCard.tsx
+   - Card con info de la promo
+   - Lista mini de productos incluidos (3 thumbnails + "+N más")
+
+3. src/features/promociones/pages/PromocionesPage.tsx
+   - Lista de promociones activas
+   - GET /api/promociones (solo vigentes)
+   - Cada promo expandible: muestra todos los productos al click
+
+4. src/features/estaticas/pages/AcercaPage.tsx
+   "QUIÉNES SOMOS" — la historia de VAULT 16
+   - Hero con SVG art
+   - Bloques de texto:
+     • Origen: "VAULT 16 nace en Quito en 2026..."
+     • Filosofía: streetwear urbano, sin pretensiones
+     • Sustentabilidad: tela peruana de calidad, producción local
+   - CTA: "Ver catálogo"
+   
+   IMPORTANTE: El copy debe sonar AUTÉNTICO, no marketing fake.
+   Tono: directo, urbano, ecuatoriano sin caer en exceso de modismos.
+
+5. src/features/estaticas/pages/ContactoPage.tsx
+   - Form: nombre, email, asunto, mensaje
+   - Por ahora: al submit → toast success (sin backend)
+   - Datos de contacto laterales: email, redes sociales (placeholders)
+
+6. src/features/estaticas/pages/TerminosPage.tsx
+   - Términos y condiciones MVP (3-4 secciones placeholder)
+   - Última actualización: fecha
+
+7. src/features/estaticas/pages/PrivacidadPage.tsx
+   - Política de privacidad MVP
+
+8. BUSCADOR — refactor del SearchBar:
+   src/features/catalogo/hooks/useSemanticSearch.ts
+   - Cuando el usuario tipea en SearchBar → debounce 400ms
+   - Si la query tiene < 3 chars → no hacer nada
+   - Llama a GET /api/productos?search=... (búsqueda léxica por ahora)
+   - Muestra dropdown con top 5 sugerencias debajo del search
+   - Cada sugerencia: thumbnail + nombre + categoría + precio
+   - Click en sugerencia → /producto/:id
+   - Botón abajo "Ver todos los resultados (N)" → /catalogo?q=...
+   
+   FUTURO (con keys): cuando ANTHROPIC_API_KEY esté configurada,
+   agregar GET /api/productos/search-semantic que use embeddings.
+   El frontend lo detecta vía /health y switcha automáticamente.
+
+9. src/features/catalogo/components/SearchResultsDropdown.tsx
+   - Dropdown debajo del SearchBar
+   - Muestra resultados en tiempo real
+   - Click fuera cierra
+   - Loading state con skeleton
+
+10. UPDATES en router.tsx con todas las rutas finales
+
+VALIDACIÓN:
+- Promociones page muestra el "Drop 001 — Lanzamiento" del seed
+- Acerca/Contacto/Términos/Privacidad accesibles desde footer
+- SearchBar dropdown funciona y filtra correctamente
+```
+
+---
