@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ChevronRight, Minus, Plus, Check, Ruler } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
@@ -12,15 +12,19 @@ import type { Producto, Variante } from '@/shared/types/producto.types'
 
 function Breadcrumb({ producto }: { producto: Producto }) {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleBack = useCallback(() => {
-    // Use in-app history if available; fallback to /catalogo
-    if (window.history.length > 1) {
+    // react-router sets location.key === 'default' on the first entry of the
+    // session. Any other key means the user already navigated inside the app,
+    // so navigate(-1) is guaranteed to land on a previous in-app route.
+    // Otherwise (deep link / direct load), fall back to /catalogo.
+    if (location.key && location.key !== 'default') {
       navigate(-1)
     } else {
       navigate('/catalogo')
     }
-  }, [navigate])
+  }, [navigate, location.key])
 
   return (
     <>
