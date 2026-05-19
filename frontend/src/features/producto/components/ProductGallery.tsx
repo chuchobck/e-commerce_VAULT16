@@ -161,7 +161,7 @@ export function ProductGallery({ fotos, productId, productName }: ProductGallery
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="aspect-product rounded-lg overflow-hidden bg-bg-hover dark:bg-bg-hover-dark cursor-zoom-in group relative"
+            className="aspect-product sm:max-h-[560px] rounded-lg overflow-hidden bg-bg-hover dark:bg-bg-hover-dark cursor-zoom-in group relative"
             onClick={() => setLightboxOpen(true)}
             role="button"
             aria-label="Click para ampliar imagen"

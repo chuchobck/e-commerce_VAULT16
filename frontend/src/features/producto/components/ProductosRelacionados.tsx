@@ -28,8 +28,8 @@ export function ProductosRelacionados({ producto }: ProductosRelacionadosProps) 
 
   if (isLoading) {
     return (
-      <section className="mt-16 pt-8 border-t border-border-base dark:border-border-base-dark">
-        <h2 className="text-xl font-semibold text-text-primary dark:text-text-primary-dark mb-6">
+      <section className="mt-10 pt-6 border-t border-border-base dark:border-border-base-dark">
+        <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-4">
           También te puede gustar
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
@@ -49,9 +49,9 @@ export function ProductosRelacionados({ producto }: ProductosRelacionadosProps) 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.4 }}
-      className="mt-16 pt-8 border-t border-border-base dark:border-border-base-dark"
+      className="mt-10 pt-6 border-t border-border-base dark:border-border-base-dark"
     >
-      <h2 className="text-xl font-semibold text-text-primary dark:text-text-primary-dark mb-6">
+      <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-4">
         También te puede gustar
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">

@@ -1,10 +1,36 @@
-import { useParams, Link } from 'react-router-dom'
+import { useCallback } from 'react'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useProducto } from '@/features/producto/hooks/useProducto'
 import { ProductGallery } from '@/features/producto/components/ProductGallery'
 import { ProductInfo } from '@/features/producto/components/ProductInfo'
 import { ProductosRelacionados } from '@/features/producto/components/ProductosRelacionados'
+
+// ─── Back button ─────────────────────────────────────────────────────────────
+
+function BackButton() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const handleBack = useCallback(() => {
+    if (location.key && location.key !== 'default') {
+      navigate(-1)
+    } else {
+      navigate('/catalogo')
+    }
+  }, [navigate, location.key])
+  return (
+    <button
+      type="button"
+      onClick={handleBack}
+      className="inline-flex items-center gap-1.5 text-sm text-text-secondary dark:text-text-secondary-dark hover:text-accent mb-4 transition-colors"
+      aria-label="Volver"
+    >
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+      Volver
+    </button>
+  )
+}
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -95,8 +121,10 @@ export function ProductoDetailPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="max-w-content mx-auto px-4 sm:px-6 py-8"
+      className="max-w-content mx-auto px-4 sm:px-6 py-6"
     >
+      <BackButton />
+
       {/* Main detail grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left — Gallery */}
