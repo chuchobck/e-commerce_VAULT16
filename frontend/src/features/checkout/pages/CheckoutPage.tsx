@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, Loader2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Loader2, X } from 'lucide-react'
 import { useCheckout } from '@/features/checkout/hooks/useCheckout'
 import {
   DireccionSection,
@@ -107,7 +107,18 @@ export function CheckoutPage() {
   if (items.length === 0) return null
 
   return (
-    <div className="max-w-content mx-auto px-4 sm:px-6 py-8 pb-32">
+    <div className="max-w-content mx-auto px-4 sm:px-6 py-6 pb-32">
+      <Link
+        to="/carrito"
+        className={`inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-4 transition-colors ${
+          submitting ? 'opacity-40 pointer-events-none' : ''
+        }`}
+        aria-disabled={submitting || undefined}
+        tabIndex={submitting ? -1 : undefined}
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Volver al carrito
+      </Link>
       <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary-dark mb-6">
         Checkout
       </h1>

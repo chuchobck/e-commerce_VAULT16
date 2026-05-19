@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { EcommerceLayout } from '@/shared/components/layout/EcommerceLayout'
 import { AuthLayout } from '@/shared/components/layout/AuthLayout'
+import { CheckoutLayout } from '@/shared/components/layout/CheckoutLayout'
 import { CuentaLayout } from '@/shared/components/layout/CuentaLayout'
 import { ProtectedRoute } from '@/shared/components/layout/ProtectedRoute'
 
@@ -116,14 +117,6 @@ export function AppRouter() {
         <Route path="/promociones" element={<SuspensePage><PromocionesPage /></SuspensePage>} />
         <Route path="/contacto" element={<SuspensePage><ContactoPage /></SuspensePage>} />
         <Route
-          path="/checkout"
-          element={
-            <ProtectedRoute>
-              <SuspensePage><CheckoutPage /></SuspensePage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/checkout/confirmacion/:idFactura"
           element={
             <ProtectedRoute>
@@ -155,6 +148,18 @@ export function AppRouter() {
         <Route path="/cuenta/perfil" element={<SuspensePage><PerfilPage /></SuspensePage>} />
         <Route path="/cuenta/pedidos" element={<SuspensePage><PedidosPage /></SuspensePage>} />
         <Route path="/cuenta/direcciones" element={<SuspensePage><DireccionesPage /></SuspensePage>} />
+      </Route>
+
+      {/* ── Checkout enfocado (CheckoutLayout — header slim, sin footer ni nav) ─ */}
+      <Route element={<CheckoutLayout />}>
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <SuspensePage><CheckoutPage /></SuspensePage>
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* ── Rutas auth (AuthLayout — sin Header/Footer) ────────────── */}
