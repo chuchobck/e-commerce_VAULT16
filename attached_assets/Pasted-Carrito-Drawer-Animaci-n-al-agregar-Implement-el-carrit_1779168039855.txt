@@ -1,0 +1,852 @@
+Carrito Drawer + Animación al agregar
+
+```
+Implementá el carrito completo. Es un DRAWER lateral, no una página.
+(Hay también una página /carrito como fallback, pero el drawer es lo principal.)
+
+ARCHIVOS:
+
+1. src/features/carrito/stores/carritoStore.ts (Zustand)
+   
+   interface CarritoStore {
+     items: CarritoItem[]                    // sincronizado con backend
+     isLoading: boolean
+     setItems: (items: CarritoItem[]) => void
+     addItemOptimistic: (item) => void       // para UI optimista
+     updateCantidadOptimistic: (id, cantidad) => void
+     removeItemOptimistic: (id) => void
+     getTotalItems: () => number              // para el badge
+     getSubtotal: () => number
+     getDescuentoTotal: () => number
+     getTotal: () => number
+   }
+   
+   El store es para UI optimista. La fuente de verdad es el backend (TanStack Query).
+   Cuando el query refetchea, sincroniza con setItems.
+
+2. src/features/carrito/api/carritoApi.ts
+   - getCarrito() → GET /api/carrito
+   - addItem({ id_variante, cantidad }) → POST /api/carrito/items
+   - updateCantidad(id_carrito_det, cantidad) → PUT /api/carrito/items/:id
+   - removeItem(id_carrito_det) → DELETE /api/carrito/items/:id
+   - clearCarrito() → DELETE /api/carrito
+   - validar() → GET /api/carrito/validar (pre-checkout)
+
+3. src/features/carrito/hooks/useCarrito.ts
+   useQuery({
+     queryKey: ['carrito'],
+     queryFn: getCarrito,
+     enabled: isAuthenticated,    // si no logueado, usa solo el store local
+     onSuccess: (data) => carritoStore.setItems(data.items)
+   })
+
+4. src/features/carrito/hooks/useAddToCarrito.ts
+   useMutation con optimistic update:
+   
+   onMutate: (newItem) => {
+     // Cancelar queries en flight
+     queryClient.cancelQueries(['carrito'])
+     // Backup
+     const prev = queryClient.getQueryData(['carrito'])
+     // Optimistic update en el store + queryClient
+     carritoStore.addItemOptimistic(newItem)
+     return { prev }
+   },
+   onError: (err, newItem, context) => {
+     queryClient.setQueryData(['carrito'], context.prev)
+     toast.error("No pudimos agregar el producto")
+   },
+   onSuccess: () => {
+     // Trigger animación del icono carrito
+     // Abrir el drawer automáticamente (decisión UX confirmada por usuario)
+     uiStore.openCartDrawer()
+     toast.success("¡Agregado al carrito!")
+   },
+   onSettled: () => {
+     queryClient.invalidateQueries(['carrito'])
+   }
+
+5. src/features/carrito/hooks/useUpdateCantidad.ts
+   Mutation con debounce 400ms (para que +/- rápido no spammee la API).
+
+6. src/features/carrito/hooks/useRemoveItem.ts
+   Mutation simple. Optimistic: quita del store inmediatamente.
+
+7. src/features/carrito/components/CarritoDrawer.tsx ← EL CORE
+   
+   ESTRUCTURA DEL DRAWER (slide desde la derecha):
+   ┌──────────────────────────────────────┐
+   │  TU CARRITO (3)              [✕]     │  ← header
+   ├──────────────────────────────────────┤
+   │                                      │
+   │  [item 1]                            │  ← lista scrolleable
+   │  [item 2]                            │
+   │  [item 3]                            │
+   │                                      │
+   ├──────────────────────────────────────┤
+   │  Subtotal:        $169.97            │  ← summary sticky bottom
+   │  Descuentos:     -$25.50             │
+   │  ─────────────────────                │
+   │  Total:           $144.47            │
+   │                                      │
+   │  [   IR A PAGAR   ]                  │  ← CTA primario
+   │  [Seguir comprando]                  │  ← CTA secundario (cierra drawer)
+   └──────────────────────────────────────┘
+   
+   - Width: max-w-drawer (420px), full-height
+   - Slide right-to-left con framer-motion (250ms smooth)
+   - Backdrop oscuro 60% opacity, click cierra
+   - z-drawer (30)
+   - Header sticky, summary sticky (lista entre ellos scrolea)
+
+8. src/features/carrito/components/CarritoItemRow.tsx
+   - Layout horizontal: [thumbnail 64x80] [info] [controles]
+   - Info: nombre producto, color · talla, precio unitario
+   - Controles:
+     • Selector cantidad inline [- N +] (max = stock disponible)
+     • Botón "Eliminar" (icono trash, sin texto)
+   - Subtotal de la línea a la derecha (precio × cantidad)
+   - Si tiene descuento aplicado: mostrá precio tachado + nuevo precio
+   - Animación al eliminar: slide-out + fade
+
+9. src/features/carrito/components/CarritoSummary.tsx
+   - Subtotal, descuento, total
+   - El descuento es la suma de descuentos de cada línea
+   - Botones IR A PAGAR (primary) y Seguir comprando (secondary)
+   - "IR A PAGAR" → cierra drawer + navigate a /checkout
+   - Disabled si carrito vacío
+
+10. src/features/carrito/components/CarritoVacio.tsx
+    - Ilustración SVG (carrito vacío estilizado)
+    - Texto: "Tu carrito está vacío"
+    - Sub: "Empezá a explorar el catálogo"
+    - Botón "Ver catálogo" → /catalogo + cierra drawer
+
+11. src/features/carrito/components/CarritoIconBadge.tsx
+    Conecta con uiStore + carritoStore.
+    - Lee el contador
+    - Animación pulse cuando getTotalItems() incrementa (usar prevValue ref)
+    - Conecta esta animación con la del header del prompt 18
+
+12. src/features/carrito/pages/CarritoPage.tsx
+    - Versión full-page del drawer (mismo contenido pero en layout amplio)
+    - Para cuando alguien escribe /carrito en la URL
+    - 2 columnas: items izq, summary der
+
+ANIMACIÓN "AGREGAR AL CARRITO" (la magia):
+Cuando se agrega un producto:
+1. El botón "Agregar al carrito" muestra ✓ por 1s
+2. El icono del carrito en el header hace bounce + scale
+3. El badge incrementa con pulse de color accent
+4. Toast aparece bottom-right
+5. (OPCIONAL configurable) El drawer se abre automáticamente
+
+CARRITO PARA USUARIO NO LOGUEADO:
+- Items viven en localStorage (carritoStore con persist middleware)
+- Al login → merge con el carrito del backend:
+  • Para cada item local: POST /api/carrito/items
+  • Limpiar localStorage
+- Esto está en authStore.afterLogin() (lo veremos en prompt 23)
+
+VALIDACIÓN:
+- Agregar producto → drawer se abre, item aparece, badge incrementa
+- Cambiar cantidad → debounce funciona, no spammea
+- Eliminar item → animación slide-out
+- Vaciar carrito → empty state se muestra
+- Ir a pagar deshabilitado si vacío
+- Mobile: drawer ocupa 90% del width
+```
+
+---
+
+## 🟢 PROMPT 23 — Auth + Cuenta del cliente
+
+```
+Implementá el flujo de auth completo + área de cuenta logueada.
+
+ARCHIVOS DE AUTH:
+
+1. src/features/auth/stores/authStore.ts (Zustand persist)
+   interface AuthStore {
+     cliente: Cliente | null
+     token: string | null
+     isAuthenticated: boolean
+     login: (cliente, token) => void
+     logout: () => void
+     updateProfile: (cambios) => void
+   }
+   Persiste cliente + token en localStorage.
+   Al login → llama a carritoStore.mergeLocalWithBackend()
+
+2. src/features/auth/api/authApi.ts
+   - loginCliente, registerCliente, verifyEmail, forgotPassword, resetPassword
+   - Endpoints del backend del Día 1
+
+3. src/features/auth/schemas/auth.schemas.ts
+   Zod schemas:
+   - LoginSchema: email + password
+   - RegisterSchema: email + password (min 8 + 1 may + 1 num) + ruc_cedula (10 o 13 digitos) + nombre1 + apellido1 + telefono?
+   - ForgotPasswordSchema: email
+   - ResetPasswordSchema: password + confirmPassword (refine: deben coincidir)
+
+4. src/features/auth/hooks/
+   - useLogin, useRegister, useVerifyEmail, useForgotPassword, useResetPassword
+   - Cada uno useMutation + manejo de errores específicos
+
+5. src/features/auth/components/LoginForm.tsx
+   - react-hook-form + zod
+   - Email + password con show/hide
+   - "¿Olvidaste tu contraseña?" → /forgot-password
+   - "¿No tenés cuenta? Registrate" → /register
+   - Manejo de error EMAIL_NOT_VERIFIED → muestra "Verificá tu email · Reenviar"
+
+6. src/features/auth/components/RegisterForm.tsx
+   - Form con todos los campos
+   - Validaciones inline (mostrar reglas de password al typear)
+   - Acepta términos checkbox
+   - Después de submit exitoso → muestra "Te enviamos un email · Verificalo para activar tu cuenta"
+   - El backend en dev loggea el link de verificación a consola
+
+7. src/features/auth/components/ForgotPasswordForm.tsx
+   - Solo email
+   - Después de submit: mensaje genérico "Si el email existe, te llegó un link"
+
+8. src/features/auth/components/ResetPasswordForm.tsx
+   - Lee :token de URL
+   - Password + confirmPassword
+   - Después de OK: redirect a /login con flash "Contraseña actualizada"
+
+9. src/features/auth/pages/
+   - LoginPage, RegisterPage, VerifyEmailPage (consume :token), 
+     ForgotPasswordPage, ResetPasswordPage
+   - Layout especial sin Header (AuthLayout):
+     • Centered card max-w-modal
+     • Logo VAULT 16 arriba
+     • Form en el centro
+     • Background con SVG art sutil
+
+10. src/shared/components/layout/AuthLayout.tsx
+    Layout sin Header/Footer normal, usado solo para rutas de auth.
+
+11. src/shared/components/layout/ProtectedRoute.tsx
+    HOC que verifica isAuthenticated:
+    - Si no auth → redirect a /login con returnUrl=current
+    - Si auth pero email_verificado = false → redirect a /verify-email-pending
+
+ARCHIVOS DE CUENTA:
+
+12. src/features/cuenta/components/CuentaSidebar.tsx
+    Sidebar persistente del área de cuenta. Items:
+    - 👤 Perfil          → /mi-cuenta
+    - 📍 Direcciones     → /mi-cuenta/direcciones
+    - 🔒 Seguridad       → /mi-cuenta/seguridad
+    - 📦 Mis pedidos     → /mi-cuenta/pedidos
+    
+    NavLink active state. En mobile: collapsa a botones tabs arriba.
+
+13. src/features/cuenta/components/PerfilForm.tsx
+    Edita: nombre1, apellido1, telefono.
+    NO permite cambiar email (eso es flujo separado, no MVP).
+    Mostrar email + ruc_cedula como read-only.
+
+14. src/features/cuenta/components/DireccionesList.tsx
+    - Lista de direcciones del cliente
+    - Cada card: alias, dirección completa, badge "Principal" si aplica
+    - Botones: Editar / Eliminar / Marcar como principal
+    - Botón grande "+ Agregar dirección"
+
+15. src/features/cuenta/components/DireccionForm.tsx
+    Modal o página separada con form:
+    - alias (ej. "Casa", "Oficina")
+    - calle_principal, numeracion, calle_secundaria?
+    - referencia?
+    - barrio?, ciudad, provincia, pais (default Ecuador), codigo_postal?
+    - es_principal checkbox
+
+16. src/features/cuenta/components/CambiarPasswordForm.tsx
+    - oldPassword + newPassword + confirmPassword
+    - Validación: newPassword !== oldPassword
+
+17. src/features/cuenta/pages/PerfilPage, DireccionesPage, SeguridadPage
+
+18. src/features/pedidos/components/
+    - PedidoCard: id_factura, fecha, total, estado badge
+    - PedidoDetalle: cabecera + items + tracking timeline
+    - EstadoTimeline: visualización EMI → PAG → ENV → ENT con dots
+
+19. src/features/pedidos/pages/PedidosPage, PedidoDetailPage
+
+20. src/shared/components/layout/CuentaLayout.tsx
+    EcommerceLayout + sidebar adicional.
+    Path: /mi-cuenta/* protegido.
+
+UPDATES:
+- src/app/router.tsx: agregar todas las rutas
+- UserMenu del Header: ahora conecta con authStore (los stubs del prompt 18 se reemplazan)
+
+VALIDACIÓN:
+- Login funciona, redirige a returnUrl si vino de protected
+- Register → email pendiente → verify (botón "ya verifiqué" recarga el cliente)
+- ResetPassword cierra el flow correctamente
+- Cuenta se ve bien en mobile (sidebar collapsa)
+- ProtectedRoute funciona en /mi-cuenta/* y /checkout
+```
+
+---
+
+## 🟢 PROMPT 24 — Checkout flow (Stripe)
+
+```
+Implementá el flujo de checkout completo con Stripe Elements.
+
+ESTRUCTURA EN 3 STEPS:
+1. Dirección de envío
+2. Pago (Stripe)
+3. Confirmación
+
+ARCHIVOS:
+
+1. src/features/checkout/components/CheckoutSteps.tsx
+   - Stepper visual arriba: ●─●─○ con labels
+   - Estado actual destacado en accent
+   - Steps anteriores clickeables, siguientes no
+
+2. src/features/checkout/components/DireccionStep.tsx
+   - Lista de direcciones del cliente (DireccionesList read-only)
+   - Selector radio: cuál usar como envío
+   - Botón "+ Agregar dirección nueva" → abre DireccionForm modal
+   - Si no hay direcciones: empty state + "Agregar dirección" obligatorio
+   - Botón "Continuar al pago" disabled hasta seleccionar una
+
+3. src/features/checkout/components/ResumenOrden.tsx
+   Sticky a la derecha durante todo el checkout:
+   - Items del carrito (lista compacta)
+   - Subtotal, descuentos, total
+   - Datos de envío (cuando ya seleccionó)
+   - Método de pago (cuando ya seleccionó)
+   - Edit pencil para volver a steps anteriores
+
+4. src/features/checkout/components/PagoStep.tsx
+   Selector de método:
+   - Tarjeta (Stripe) — recommended badge
+   - Transferencia bancaria — instrucciones manual
+
+   Si Tarjeta:
+   - Inicializa Stripe con la pk del env
+   - Componente <StripePaymentForm /> con CardElement
+   - POST /api/checkout/iniciar-pago → recibe client_secret
+   - stripe.confirmCardPayment(client_secret, ...)
+   - Si OK → backend recibe webhook → backend confirma orden
+     Mientras tanto: mostrar "Procesando..." con spinner
+   - Si error: mostrar mensaje, permitir reintentar
+
+   Si Transferencia:
+   - Mostrar datos bancarios (cuenta de VAULT 16)
+   - POST /api/checkout/iniciar-pago con metodo_pago='TRANSFERENCIA'
+   - Recibe id_factura, instrucciones
+   - Mostrar instrucciones + botón "Marcar como transferida"
+   - Al click: redirect a /checkout/confirmacion/:idFactura
+     (el admin después debe confirmar el pago manualmente)
+
+5. src/features/checkout/components/StripePaymentForm.tsx
+   - Wrap en <Elements stripe={stripePromise}>
+   - <PaymentElement /> de Stripe
+   - Botón "Pagar $XXX.XX"
+   - Loading state, error handling
+   - Si Stripe key es 'pk_test_placeholder' → mostrar warning visible:
+     "MODO STUB · Stripe no está configurado. La transacción será simulada."
+     Y simular el pago llamando directo al endpoint /api/checkout/confirmar
+     (Esto es para que el flujo funcione end-to-end mientras no haya key real.)
+
+6. src/features/checkout/hooks/useCheckout.ts
+   - Estado del checkout (currentStep, direccion, metodo)
+   - Funciones nextStep, prevStep, completeCheckout
+
+7. src/features/checkout/hooks/useCreatePaymentIntent.ts
+   - useMutation que llama al backend
+   - Cachea el client_secret (no crear múltiples PaymentIntents en re-renders)
+
+8. src/features/checkout/api/checkoutApi.ts
+   - preview, iniciarPago, confirmar (interno por webhook)
+
+9. src/features/checkout/pages/CheckoutPage.tsx
+   - Layout: stepper arriba, step actual + ResumenOrden a la derecha
+   - Protegido (requiere auth + email verificado + carrito no vacío)
+   - Pre-validación al montar: GET /api/carrito/validar
+     Si hay problemas (stock cambió, precio cambió) → mostrar warnings antes de continuar
+
+10. src/features/checkout/pages/ConfirmacionPage.tsx
+    - Recibe :idFactura
+    - Loading: poll cada 2s GET /api/facturas/me/:id hasta estado='PAG' (max 30s)
+    - Cuando confirmado:
+      • Animación check verde grande con framer-motion
+      • "¡Listo! Tu pedido es #001-001-000000123"
+      • Resumen del pedido
+      • Botones: "Ver pedido" (→ /mi-cuenta/pedidos/:id) / "Seguir comprando"
+      • Si transferencia: instrucciones de pago + "Te avisaremos cuando confirmemos"
+
+VALIDACIÓN:
+- Flujo completo: carrito → checkout → dirección → pago → confirmación
+- Con Stripe stub: el flujo termina sin errores
+                                                - Si stock se acabó entre carrito y checkout: error claro + opción de quitar item
+                                                - Edge case: usuario hace back, no se duplica orden
+                                                - Email de confirmación (TODO backend, por ahora solo console)
+                                                ```
+
+                                                ---
+
+## 🟢 PROMPT 25 — Promociones + Páginas estáticas + Búsqueda
+
+```
+Implementá las páginas restantes que faltan para completar el sitio.
+
+ARCHIVOS:
+
+1. src/features/promociones/components/PromocionBanner.tsx
+   - Banner full-width destacado por promo
+   - Imagen procedural SVG con el nombre del drop
+   - Fechas vigentes
+   - CTA "Ver productos"
+
+2. src/features/promociones/components/PromocionCard.tsx
+   - Card con info de la promo
+   - Lista mini de productos incluidos (3 thumbnails + "+N más")
+
+3. src/features/promociones/pages/PromocionesPage.tsx
+   - Lista de promociones activas
+   - GET /api/promociones (solo vigentes)
+   - Cada promo expandible: muestra todos los productos al click
+
+4. src/features/estaticas/pages/AcercaPage.tsx
+   "QUIÉNES SOMOS" — la historia de VAULT 16
+   - Hero con SVG art
+   - Bloques de texto:
+     • Origen: "VAULT 16 nace en Quito en 2026..."
+     • Filosofía: streetwear urbano, sin pretensiones
+     • Sustentabilidad: tela peruana de calidad, producción local
+   - CTA: "Ver catálogo"
+   
+   IMPORTANTE: El copy debe sonar AUTÉNTICO, no marketing fake.
+   Tono: directo, urbano, ecuatoriano sin caer en exceso de modismos.
+
+5. src/features/estaticas/pages/ContactoPage.tsx
+   - Form: nombre, email, asunto, mensaje
+   - Por ahora: al submit → toast success (sin backend)
+   - Datos de contacto laterales: email, redes sociales (placeholders)
+
+6. src/features/estaticas/pages/TerminosPage.tsx
+   - Términos y condiciones MVP (3-4 secciones placeholder)
+   - Última actualización: fecha
+
+7. src/features/estaticas/pages/PrivacidadPage.tsx
+   - Política de privacidad MVP
+
+8. BUSCADOR — refactor del SearchBar:
+   src/features/catalogo/hooks/useSemanticSearch.ts
+   - Cuando el usuario tipea en SearchBar → debounce 400ms
+   - Si la query tiene < 3 chars → no hacer nada
+   - Llama a GET /api/productos?search=... (búsqueda léxica por ahora)
+   - Muestra dropdown con top 5 sugerencias debajo del search
+   - Cada sugerencia: thumbnail + nombre + categoría + precio
+   - Click en sugerencia → /producto/:id
+   - Botón abajo "Ver todos los resultados (N)" → /catalogo?q=...
+   
+   FUTURO (con keys): cuando ANTHROPIC_API_KEY esté configurada,
+   agregar GET /api/productos/search-semantic que use embeddings.
+   El frontend lo detecta vía /health y switcha automáticamente.
+
+9. src/features/catalogo/components/SearchResultsDropdown.tsx
+   - Dropdown debajo del SearchBar
+   - Muestra resultados en tiempo real
+   - Click fuera cierra
+   - Loading state con skeleton
+
+10. UPDATES en router.tsx con todas las rutas finales
+
+VALIDACIÓN:
+- Promociones page muestra el "Drop 001 — Lanzamiento" del seed
+- Acerca/Contacto/Términos/Privacidad accesibles desde footer
+- SearchBar dropdown funciona y filtra correctamente
+```
+
+---
+
+## 🟢 PROMPT 26 — Asistente IA Widget (★ EL DIFERENCIAL ★)
+
+```
+Implementá el widget del asistente de compra IA. ES EL DIFERENCIADOR DE VAULT 16.
+
+UBICACIÓN: src/features/assistant/
+
+CONTEXTO:
+- El backend tiene POST /api/assistant/chat con streaming SSE
+- Si ANTHROPIC_API_KEY no está configurada → backend responde con stubs
+- El widget debe funcionar igual con stubs (UX completa)
+
+DISEÑO:
+
+ESTADO CERRADO:
+Botón circular flotante bottom-right (fixed):
+- 56x56, rounded-full, bg-accent, shadow-lg
+- Icono: MessageCircle de lucide
+- Pulse sutil cada 8 segundos para llamar atención (no agresivo)
+- Badge con notificación "1" si hay mensaje sin leer (placeholder)
+
+ESTADO ABIERTO:
+Drawer/panel desde abajo-derecha:
+- Width: 380px, height: 600px (en desktop)
+- Mobile: full screen
+- Estructura:
+
+┌─────────────────────────────────┐
+│ ⚡ Asistente VAULT 16     [✕]  │  ← header con avatar + botón cerrar
+├─────────────────────────────────┤
+│ Sugerencias (al inicio):        │
+│ [Buscame algo negro]            │
+│ [Tengo $50, qué me recomendás]  │
+│ [Necesito hoodie oversize]      │
+├─────────────────────────────────┤
+│                                 │
+│ 💬 Hola! Soy el asistente...    │  ← mensajes
+│                                 │
+│              Mensaje del user > │
+│                                 │
+│ 💬 Te recomiendo el Hoodie...   │
+│   [card mini producto]          │  ← productos referenciados
+│                                 │
+├─────────────────────────────────┤
+│ [Escribí tu mensaje...] [➤]     │  ← input
+└─────────────────────────────────┘
+
+ARCHIVOS:
+
+1. src/features/assistant/stores/chatStore.ts
+   interface ChatStore {
+     isOpen: boolean
+     idSesion: string | null              // UUID generado al primer mensaje
+     mensajes: Message[]
+     isStreaming: boolean
+     toggleOpen: () => void
+     close: () => void
+     enviarMensaje: (texto: string) => Promise<void>
+   }
+   
+   El idSesion se genera en frontend (crypto.randomUUID()).
+   Persiste idSesion en localStorage para retomar conversación.
+
+2. src/features/assistant/api/assistantApi.ts
+   - getSesion(idSesion): si existe en backend, recupera mensajes
+   - chatStream(idSesion, mensaje): retorna ReadableStream del SSE
+   - chatSync(idSesion, mensaje): fallback no-streaming
+
+3. src/features/assistant/hooks/useChatStream.ts
+   Maneja el streaming SSE:
+   
+   const enviarMensaje = async (texto) => {
+     // 1. Agregar mensaje del user al store inmediatamente
+     chatStore.appendMessage({ rol: 'user', contenido: texto })
+     
+     // 2. Agregar mensaje vacío del assistant (para fill in stream)
+     chatStore.appendMessage({ rol: 'assistant', contenido: '', streaming: true })
+     
+     // 3. Llamar al endpoint con fetch + getReader
+     const response = await fetch('/api/assistant/chat', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ mensaje: texto, id_sesion: chatStore.idSesion })
+     })
+     
+     const reader = response.body!.getReader()
+     const decoder = new TextDecoder()
+     let buffer = ''
+     
+     while (true) {
+       const { done, value } = await reader.read()
+       if (done) break
+       buffer += decoder.decode(value, { stream: true })
+       
+       // Parse SSE: cada línea data: {...}\n\n
+       const lines = buffer.split('\n\n')
+       buffer = lines.pop() || ''
+       
+       for (const line of lines) {
+         if (!line.startsWith('data: ')) continue
+         const data = JSON.parse(line.slice(6))
+         
+         if (data.type === 'text') {
+           chatStore.appendToLastMessage(data.content)
+         } else if (data.type === 'done') {
+           chatStore.finalizeLastMessage(data.productos_referenciados)
+         }
+       }
+     }
+   }
+
+4. src/features/assistant/components/ChatWidget.tsx
+   El componente principal. Maneja open/close.
+   - Renderiza FAB cuando cerrado
+   - Renderiza Drawer cuando abierto
+   - framer-motion AnimatePresence para transiciones
+
+5. src/features/assistant/components/ChatHeader.tsx
+   - Avatar (icono Zap de lucide en círculo bg-accent)
+   - Nombre "Asistente VAULT 16"
+   - Status: "● En línea" en verde
+   - Botón cerrar [✕]
+   - Botón menú con: "Limpiar conversación" / "Reportar problema"
+
+6. src/features/assistant/components/MessageList.tsx
+   - Scroll auto-bottom cuando llega mensaje nuevo (usar ref + useEffect)
+   - Cada mensaje es <MessageBubble />
+   - Si mensaje.streaming: muestra <TypingIndicator /> al final
+
+7. src/features/assistant/components/MessageBubble.tsx
+   USER (right-aligned):
+   - bg-accent, text white, rounded-2xl, max-w-80%
+   - Padding p-3
+   
+   ASSISTANT (left-aligned):
+   - bg-bg-card, rounded-2xl, max-w-80%
+   - Avatar pequeño Zap a la izquierda
+   - Soporta markdown render (usar react-markdown):
+     • Bold, italic, lists
+     • Links: cualquier link con /producto/:id se trasforma a <ProductoCardInline />
+   - Si productos_referenciados.length > 0:
+     • Mostrar cards inline después del texto
+     • <ProductoCardInline /> compacta
+
+8. src/features/assistant/components/ProductoCardInline.tsx
+   Card compacto: thumbnail + nombre + precio + "Ver" link.
+   Click → /producto/:id (cierra el chat? no — lo deja abierto).
+
+9. src/features/assistant/components/ChatInput.tsx
+   - Textarea autogrow (max 4 lines)
+   - Botón send (icono Send de lucide)
+   - Enter → enviar (Shift+Enter → nueva línea)
+   - Disabled mientras isStreaming
+   - Counter "X/500 chars"
+
+10. src/features/assistant/components/TypingIndicator.tsx
+    3 dots animados (bounce sequential) — clásico chat indicator.
+
+11. src/features/assistant/components/SugerenciasIniciales.tsx
+    Mostrado solo si mensajes.length === 0:
+    - 4-5 chips clickeables con sugerencias
+    - Click → enviarMensaje(texto del chip)
+    - Sugerencias:
+      • "Mostrame los más vendidos"
+      • "Tengo $50, qué me recomendás"
+      • "Buscame un hoodie oversize"
+      • "Qué hay nuevo en VAULT 16"
+
+12. INTEGRACIÓN GLOBAL:
+    En src/app/App.tsx después del router:
+    <ChatWidget />     // siempre visible en todas las páginas
+
+DECISIÓN UX:
+- El widget NO se abre auto. Solo cuando user clickea.
+- En mobile, abrir el widget oculta el resto de la página (full-screen drawer).
+- El widget persiste idSesion así el usuario puede cerrar la pestaña y al volver continuar.
+
+VALIDACIÓN:
+- Streaming funciona suavemente (los caracteres aparecen progresivamente)
+- Productos referenciados aparecen como cards
+- El widget funciona en mobile (full-screen) y desktop (drawer)
+- Si backend está en stub, igual funciona (el stub también stream-simulea)
+```
+
+---
+
+## 🟢 PROMPT 27 — Cierre, hardening y deployment-ready
+
+```
+Último prompt del frontend. Tareas finales:
+
+1. RESPONSIVE FINAL CHECK
+   Probá EXHAUSTIVAMENTE en estos breakpoints y arreglá lo roto:
+   - 375px (iPhone SE)
+   - 768px (iPad)
+   - 1024px (laptop chico)
+   - 1440px (laptop)
+   - 1920px (desktop)
+   
+   Especialmente revisá:
+   - Header: nav row 2 collapsa a hamburger menu en < 768px
+   - Catálogo: filtros se mueven a drawer en < 1024px
+   - Detalle producto: galería + info se stackean en < 1024px
+   - Carrito drawer: full-width en < 640px
+   - Chat widget: full-screen en < 768px
+   - Footer: 1 columna en < 768px
+
+2. PERFORMANCE
+   - Lazy load de rutas con React.lazy:
+     const HomePage = lazy(() => import('@/features/home/pages/HomePage'))
+   - Wrap en <Suspense fallback={<PageSkeleton />}>
+   - Verificá Lighthouse:
+     • Performance > 90 mobile
+     • Accessibility > 95
+     • Best Practices > 90
+     • SEO > 90
+
+3. ACCESSIBILITY
+   - Todos los botones con aria-label si no tienen texto
+   - Todos los inputs con label asociado
+   - Focus states visibles (no remover outline)
+   - Contraste mínimo AA (verifica con devtools)
+   - Skip-to-content link en el Header
+   - Modal/Drawer atrapan el focus correctamente
+   - Escape cierra modales
+
+4. SEO BÁSICO
+   - <Helmet> en cada página principal con title + meta description
+   - npm install react-helmet-async
+   - Title format: "{Page} · VAULT 16"
+   - Meta description única por página
+   - Open Graph tags básicos en index.html
+   - sitemap.xml básico (estático por ahora)
+
+5. ERROR BOUNDARIES
+   - <ErrorBoundary /> wrappea las rutas principales
+   - Fallback: "Algo falló · Recargar página"
+   - Loggea a console.error (en prod podés enviar a Sentry)
+
+6. ESTADO DE CARGA GLOBAL
+   - <PageSkeleton /> para suspense fallbacks
+   - <CardSkeleton /> reusado en varios lugares
+   - Spinners consistentes en mutations
+
+7. CONFIGURACIÓN DE PRODUCCIÓN
+   - vite.config.ts: build.outDir = 'dist'
+   - .env.production con la URL real del backend (placeholder por ahora)
+   - npm run build verifica que no hay errores TS
+   - Genera dist/ < 500KB gzipped (sin imágenes — todo SVG ayuda)
+
+8. README.md DEL FRONTEND
+   Generá README con:
+   - Cómo correr en dev
+   - Variables de entorno
+   - Cómo conectar al backend
+   - Lista de features
+   - Stack tecnológico
+   - Estructura de carpetas resumida
+
+9. DEPLOYMENT — Azure Static Web Apps
+   - staticwebapp.config.json en raíz:
+     {
+       "navigationFallback": {
+         "rewrite": "/index.html",
+         "exclude": ["/static/*", "*.{css,js,svg,jpg,png}"]
+       }
+     }
+   - Asegurá que VITE_API_URL apunta al backend desplegado
+   - Workflow GitHub Actions de Azure SWA (auto-generado)
+
+10. CHECKLIST FINAL DE FUNCIONALIDADES
+    Probá end-to-end estos flujos:
+    
+    A) Flujo de compra (sin login):
+       1. Browser /
+       2. Click producto destacado
+       3. Seleccionar talla, agregar al carrito
+       4. Drawer se abre
+       5. "Ir a pagar" → redirect a /login
+       6. Register nuevo cliente
+       7. Verificar email (link de consola del backend)
+       8. Login
+       9. Carrito se mantiene (mergeado del local)
+       10. Continuar checkout
+       11. Agregar dirección
+       12. Pagar con Stripe stub o transferencia
+       13. Ver confirmación
+       14. Ver pedido en /mi-cuenta/pedidos
+    
+    B) Flujo de catálogo:
+       1. /catalogo
+       2. Filtrar por categoría hoodies
+       3. Filtrar por talla M
+       4. Filtrar por color negro
+       5. Slider precio 30-60
+       6. URL refleja filtros
+       7. Compartir URL → otro browser ve mismos filtros
+       8. Limpiar filtros
+       9. Infinite scroll funciona
+    
+    C) Calculadora de tallas:
+       1. Abrir detalle de hoodie
+       2. Click "Guía de tallas"
+       3. Ingresar pecho 96
+       4. Fit "regular"
+       5. Resultado: "Tu talla: S, confianza alta"
+       6. Aplicar → talla S queda seleccionada en el detalle
+    
+    D) Asistente IA:
+       1. Click FAB
+       2. Click sugerencia "buscame algo negro"
+       3. Asistente responde con productos
+       4. Click en card de producto → /producto/:id
+       5. Volver al chat → conversación persiste
+    
+    E) Dark mode:
+       1. Toggle en header
+       2. Persiste tras reload
+       3. Todos los componentes responden bien (sin contrastes raros)
+
+VALIDACIÓN FINAL:
+- Build pasa sin errores TS
+- Dev server arranca sin warnings
+- Lighthouse > 90 en todas las métricas
+- Los 5 flujos end-to-end pasan sin errores
+- En mobile la experiencia es fluida
+- Con backend en modo stub: el sitio sigue funcionando 100%
+```
+
+---
+
+## 🔴 STOP DEL DÍA 3 — VAULT 16 está listo
+
+Tenés:
+- ✅ Bootstrap completo del e-commerce
+- ✅ Layout con header dual-row, footer, theme toggle
+- ✅ Home con carrusel + destacados + categorías llamativas
+- ✅ Catálogo con filtros + infinite scroll
+- ✅ Detalle de producto con galería + selección variante
+- ✅ Calculadora de tallas (frontend puro, SVG procedural)
+- ✅ Carrito drawer con animaciones
+- ✅ Auth completo + email verification
+- ✅ Cuenta del cliente (perfil, direcciones, pedidos)
+- ✅ Checkout 3-step con Stripe (stub-aware)
+- ✅ Promociones y páginas estáticas
+- ✅ Asistente IA con streaming
+- ✅ Responsive mobile-first
+- ✅ Performance optimizada
+- ✅ Deployment-ready para Azure SWA
+
+## PRÓXIMO PASO: Backoffice
+
+Una vez VAULT 16 esté desplegado y funcional, el día 4 arrancamos con el backoffice
+(panel admin). Ese es más simple porque es internal-facing, no necesita estética
+"wow". Es CRUDs + dashboards + tablas con TanStack Table.
+
+## NOTAS SOBRE IMÁGENES
+
+Como aún no tenés fotos reales de productos, durante todo el día 3 usaste:
+- SVGs procedurales generados por el agente (productos, hero, categorías)
+- Patrones únicos por producto usando el id como seed (consistencia visual)
+
+Cuando tengas fotos reales:
+1. Subilas vía POST /api/productos/:id/fotos (Azure Blob)
+2. El frontend automáticamente las muestra (el componente <ProductImage /> ya
+   tiene fallback al SVG procedural si no hay fotos)
+3. El SVG queda solo como fallback elegante
+
+## CUANDO TENGAS API KEYS
+
+Stripe:
+- VITE_STRIPE_PUBLIC_KEY=pk_test_xxx en .env.local
+- El warning de "MODO STUB" desaparece automáticamente
+- Probás con tarjeta 4242 4242 4242 4242
+
+Anthropic + Voyage:
+- Solo afecta al backend (frontend ya está conectado al endpoint)
+- Las respuestas del asistente pasan de stub a reales
+- La búsqueda semántica del SearchBar empieza a funcionar
