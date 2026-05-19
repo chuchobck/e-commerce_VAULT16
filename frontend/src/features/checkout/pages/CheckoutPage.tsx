@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, ArrowLeft, Loader2, X } from 'lucide-react'
 import { useCheckout } from '@/features/checkout/hooks/useCheckout'
+import { useUIStore } from '@/shared/stores/uiStore'
 import {
   DireccionSection,
   type DireccionSectionHandle,
@@ -24,6 +25,17 @@ export function CheckoutPage() {
   const getTotal = useCarritoStore((s) => s.getTotal)
 
   const { direccionId, setDireccion, setMetodoPago, setIdFactura } = useCheckout()
+  const openCartDrawer = useUIStore((s) => s.openCartDrawer)
+
+  const handleVolverAlCarrito = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (submitting) {
+      e.preventDefault()
+      return
+    }
+    // Mirror "Ver carrito" behavior: navigate home and open the drawer (the
+    // canonical cart view across the site, opened from the header icon).
+    openCartDrawer()
+  }
 
   const direccionRef = useRef<DireccionSectionHandle>(null)
   const pagoRef = useRef<PagoSectionHandle>(null)
@@ -109,7 +121,8 @@ export function CheckoutPage() {
   return (
     <div className="max-w-content mx-auto px-4 sm:px-6 py-6 pb-32">
       <Link
-        to="/carrito"
+        to="/"
+        onClick={handleVolverAlCarrito}
         className={`inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-4 transition-colors ${
           submitting ? 'opacity-40 pointer-events-none' : ''
         }`}
