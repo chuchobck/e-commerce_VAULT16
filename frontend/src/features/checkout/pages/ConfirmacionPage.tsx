@@ -162,7 +162,7 @@ export function ConfirmacionPage() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {factura && (
-            <Link to={`/mi-cuenta/pedidos/${factura.id}`}>
+            <Link to={`/mi-cuenta/pedidos/${factura.idFactura}`}>
               <Button variant="primary" size="md" leftIcon={<Package className="h-4 w-4" />}>
                 Ver pedido
               </Button>

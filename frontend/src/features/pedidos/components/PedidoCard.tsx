@@ -23,7 +23,7 @@ export function PedidoCard({ pedido }: PedidoCardProps) {
 
   return (
     <Link
-      to={`/mi-cuenta/pedidos/${pedido.id}`}
+      to={`/mi-cuenta/pedidos/${pedido.idFactura}`}
       className="block p-4 rounded-lg border border-border-base dark:border-border-base-dark bg-bg-card dark:bg-bg-card-dark hover:border-accent/40 transition-colors group"
     >
       <div className="flex items-center justify-between mb-2">
