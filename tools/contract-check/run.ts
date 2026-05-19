@@ -475,43 +475,30 @@ async function main() {
     ApiOk(z.array(RawDireccion)),
   );
 
-  let idDireccion: number | null = direcciones?.data[0]?.id_direccion ?? null;
-  if (idDireccion === null) {
-    // No hay direcciones → crear una para poder probar checkout.
-    const created = await check(
-      'POST /clientes/me/direcciones',
-      () => http('POST', '/clientes/me/direcciones', {
-        alias: 'Contract Check',
-        nombre_destinatario: 'Tester Contrato',
-        telefono_contacto: '0999999999',
-        provincia: 'Pichincha',
-        ciudad: 'Quito',
-        direccion: 'Av. Test 123 y Endpoints',
-        es_principal: true,
-      }),
-      ApiOk(RawDireccion),
-      { expectStatus: 201 },
-    );
-    idDireccion = created?.data.id_direccion ?? null;
-  } else {
-    // Igual ejercitamos POST + flag de no-principal para no tocar el default
-    const created = await check(
-      'POST /clientes/me/direcciones',
-      () => http('POST', '/clientes/me/direcciones', {
-        alias: `tmp-${Date.now()}`.slice(0, 30),
-        nombre_destinatario: 'Tester Contrato',
-        telefono_contacto: '0999999999',
-        provincia: 'Pichincha',
-        ciudad: 'Quito',
-        direccion: 'Av. Test 123',
-        es_principal: false,
-      }),
-      ApiOk(RawDireccion),
-      { expectStatus: 201 },
-    );
-    // No hay endpoint DELETE — queda como ruido aceptable (alias tmp-*).
-    void created;
-  }
+  // Siempre ejercitamos POST con una dirección temporal — al final del run
+  // la borramos con DELETE para no acumular ruido en la BD.
+  const existingPrincipal = direcciones?.data.find((d) => d.es_principal) ?? null;
+  const createdDireccion = await check(
+    'POST /clientes/me/direcciones',
+    () => http('POST', '/clientes/me/direcciones', {
+      alias: `tmp-${Date.now()}`.slice(0, 30),
+      nombre_destinatario: 'Tester Contrato',
+      telefono_contacto: '0999999999',
+      provincia: 'Pichincha',
+      ciudad: 'Quito',
+      direccion: 'Av. Test 123 y Endpoints',
+      // Si ya existe una principal, no la pisamos.
+      es_principal: existingPrincipal === null,
+    }),
+    ApiOk(RawDireccion),
+    { expectStatus: 201 },
+  );
+  const createdDireccionId = createdDireccion?.data.id_direccion ?? null;
+
+  // Para checkout preferimos la principal existente; si no hay, usamos la
+  // recién creada.
+  const idDireccion: number | null =
+    existingPrincipal?.id_direccion ?? createdDireccionId;
 
   // 6) CARRITO ───────────────────────────────────────────────────────────────
   // Estado limpio antes de probar mutaciones.
@@ -592,6 +579,27 @@ async function main() {
     );
   }
 
+  // 6b) DELETE /carrito/items/:id ────────────────────────────────────────────
+  // Re-añadimos un item (idempotente: si confirmar funcionara, el carrito
+  // estaría vacío; si no, suma cantidad al detalle existente) y luego lo
+  // borramos para ejercitar el endpoint que usa `removeItem` del frontend.
+  if (idVariante !== null) {
+    const reAdd = await http('POST', '/carrito/items', { id_variante: idVariante, cantidad: 1 });
+    const reAddBody = reAdd.body as { data?: { items?: { id_carrito_det: number }[] } };
+    const removeId = reAddBody.data?.items?.[0]?.id_carrito_det ?? null;
+    if (removeId !== null) {
+      await check(
+        `DELETE /carrito/items/${removeId}`,
+        () => http('DELETE', `/carrito/items/${removeId}`),
+        ApiOk(RawCarrito),
+      );
+    } else {
+      skip('DELETE /carrito/items/:id', 'no se pudo re-añadir item para borrar');
+    }
+  } else {
+    skip('DELETE /carrito/items/:id', 'no se encontró variante con stock');
+  }
+
   // Limpieza del carrito (no rompe el resultado si falla).
   await http('DELETE', '/carrito');
 
@@ -611,6 +619,16 @@ async function main() {
     );
   } else {
     skip('GET /facturas/me/:id', 'cliente no tiene facturas');
+  }
+
+  // 9) DELETE direccion de prueba (cleanup) ─────────────────────────────────
+  // El endpoint hace soft-delete (activa=false) — seguro de llamar.
+  if (createdDireccionId !== null) {
+    await check(
+      `DELETE /clientes/me/direcciones/${createdDireccionId}`,
+      () => http('DELETE', `/clientes/me/direcciones/${createdDireccionId}`),
+      z.object({ success: z.literal(true) }).passthrough(),
+    );
   }
 
   // ─── Resumen ─────────────────────────────────────────────────────────────
