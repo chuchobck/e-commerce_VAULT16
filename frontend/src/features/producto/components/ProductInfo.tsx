@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronRight, Minus, Plus, Check, Ruler } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Minus, Plus, Check, Ruler } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
 import { SizeCalculatorModal } from './SizeCalculatorModal'
 import { useAgregarAlCarrito } from '@/features/producto/hooks/useAgregarAlCarrito'
@@ -11,23 +11,54 @@ import type { Producto, Variante } from '@/shared/types/producto.types'
 // ─── Breadcrumb ──────────────────────────────────────────────────────────────
 
 function Breadcrumb({ producto }: { producto: Producto }) {
+  const navigate = useNavigate()
+
+  const handleBack = useCallback(() => {
+    // Use in-app history if available; fallback to /catalogo
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/catalogo')
+    }
+  }, [navigate])
+
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-text-muted dark:text-text-muted-dark mb-4 flex-wrap" aria-label="Breadcrumb">
-      <Link to="/" className="hover:text-accent transition-colors">Inicio</Link>
-      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-      <Link to="/catalogo" className="hover:text-accent transition-colors">Catálogo</Link>
-      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-      <Link
-        to={`/categoria/${producto.categoria.slug}`}
-        className="hover:text-accent transition-colors"
+    <>
+      {/* Mobile: compact "← Catálogo" button */}
+      <button
+        type="button"
+        onClick={handleBack}
+        className="sm:hidden inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-4 transition-colors"
+        aria-label="Volver al catálogo"
       >
-        {producto.categoria.nombre}
-      </Link>
-      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-      <span className="text-text-primary dark:text-text-primary-dark font-medium truncate max-w-[200px]">
-        {producto.nombre}
-      </span>
-    </nav>
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Catálogo
+      </button>
+
+      {/* Desktop: full breadcrumb */}
+      <nav
+        className="hidden sm:flex items-center gap-1.5 text-sm text-text-muted dark:text-text-muted-dark mb-4 flex-wrap"
+        aria-label="Breadcrumb"
+      >
+        <Link to="/" className="hover:text-accent transition-colors">Inicio</Link>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <Link to="/catalogo" className="hover:text-accent transition-colors">Catálogo</Link>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <Link
+          to={`/categoria/${producto.categoria.slug}`}
+          className="hover:text-accent transition-colors"
+        >
+          {producto.categoria.nombre}
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <span
+          aria-current="page"
+          className="text-text-primary dark:text-text-primary-dark font-medium truncate max-w-[200px]"
+        >
+          {producto.nombre}
+        </span>
+      </nav>
+    </>
   )
 }
 

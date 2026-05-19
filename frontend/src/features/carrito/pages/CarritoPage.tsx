@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
 import { useUpdateCantidad } from '@/features/carrito/hooks/useUpdateCantidad'
 import { useRemoveItem } from '@/features/carrito/hooks/useRemoveItem'
@@ -49,6 +49,20 @@ export function CarritoPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-content mx-auto px-4 sm:px-6 py-12">
+        {/* Breadcrumb */}
+        <nav
+          className="flex items-center gap-1.5 text-sm text-text-muted dark:text-text-muted-dark mb-6"
+          aria-label="Breadcrumb"
+        >
+          <Link to="/" className="hover:text-accent transition-colors">Inicio</Link>
+          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          <span
+            aria-current="page"
+            className="text-text-primary dark:text-text-primary-dark font-medium"
+          >
+            Carrito
+          </span>
+        </nav>
         <CarritoVacio onClose={noop} />
       </div>
     )
@@ -60,6 +74,21 @@ export function CarritoPage() {
       animate={{ opacity: 1 }}
       className="max-w-content mx-auto px-4 sm:px-6 py-8"
     >
+      {/* Breadcrumb */}
+      <nav
+        className="flex items-center gap-1.5 text-sm text-text-muted dark:text-text-muted-dark mb-4"
+        aria-label="Breadcrumb"
+      >
+        <Link to="/" className="hover:text-accent transition-colors">Inicio</Link>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <span
+          aria-current="page"
+          className="text-text-primary dark:text-text-primary-dark font-medium"
+        >
+          Carrito
+        </span>
+      </nav>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
