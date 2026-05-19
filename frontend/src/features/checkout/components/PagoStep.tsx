@@ -166,6 +166,12 @@ export function PagoStep({ direccionId, onSuccess, onBack }: PagoStepProps) {
                 createOrder={async () => {
                   setError(null)
                   const result = await createOrderMutation.mutateAsync()
+                  if (result.paypal_stub) {
+                    setError(
+                      'PayPal no está configurado en el servidor (modo demo). Usa Tarjeta o Transferencia para finalizar el pedido.',
+                    )
+                    throw new Error('PayPal en modo stub — backend sin credenciales')
+                  }
                   if (!result.paypal_order_id) {
                     throw new Error('No se pudo crear la orden PayPal')
                   }
