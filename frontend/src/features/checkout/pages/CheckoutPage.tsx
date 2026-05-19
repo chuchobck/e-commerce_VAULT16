@@ -18,8 +18,6 @@ import { validarCarrito, type CheckoutValidacion } from '@/features/checkout/api
 import { getDirecciones, type Direccion } from '@/features/cuenta/api/cuentaApi'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
 
-const PAYPAL_AVAILABLE = !!import.meta.env.VITE_PAYPAL_CLIENT_ID
-
 export function CheckoutPage() {
   const navigate = useNavigate()
   const items = useCarritoStore((s) => s.items)
