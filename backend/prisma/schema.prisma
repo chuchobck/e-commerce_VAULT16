@@ -1,12 +1,13 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  previewFeatures = ["multiSchema", "postgresqlExtensions"]
 }
 
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
   extensions = [vector]
+  schemas    = ["vortex"]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -21,6 +22,8 @@ model ajuste_inventario {
   updated_at     DateTime         @default(now()) @db.Timestamp(6)
   empleado       empleado         @relation(fields: [id_empleado], references: [id_empleado], map: "fk_aji_empleado")
   detalle_ajuste detalle_ajuste[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -42,6 +45,7 @@ model audit_log {
 
   @@index([fecha(sort: Desc)], map: "idx_audit_fecha")
   @@index([tabla, id_registro, fecha(sort: Desc)], map: "idx_audit_tabla_registro")
+  @@schema("vortex")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -52,6 +56,8 @@ model carrito {
   updated_at      DateTime          @default(now()) @db.Timestamp(6)
   cliente         cliente           @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_car_cliente")
   carrito_detalle carrito_detalle[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -67,6 +73,7 @@ model carrito_detalle {
 
   @@unique([id_carrito, id_variante], map: "uq_car_det_var")
   @@index([id_variante], map: "idx_carrito_detalle_variante")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -80,6 +87,8 @@ model categoria_producto {
   created_at   DateTime   @default(now()) @db.Timestamp(6)
   updated_at   DateTime   @default(now()) @db.Timestamp(6)
   producto     producto[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -96,6 +105,7 @@ model chat_mensaje {
   chat_sesion             chat_sesion @relation(fields: [id_sesion], references: [id_sesion], onDelete: Cascade, map: "fk_chm_sesion")
 
   @@index([id_sesion, fecha], map: "idx_chat_mensaje_sesion")
+  @@schema("vortex")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -108,6 +118,8 @@ model chat_sesion {
   ip_origen            String?        @db.VarChar(45)
   chat_mensaje         chat_mensaje[]
   cliente              cliente?       @relation(fields: [id_cliente], references: [id_cliente], map: "fk_chs_cliente")
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -131,6 +143,8 @@ model cliente {
   direccion_cliente  direccion_cliente[]
   factura            factura[]
   token_recuperacion token_recuperacion[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -143,6 +157,8 @@ model detalle_ajuste {
   tipo_movimiento   String            @db.Char(3)
   ajuste_inventario ajuste_inventario @relation(fields: [id_ajuste], references: [id_ajuste], onDelete: Cascade, map: "fk_dad_ajuste")
   variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_dad_variante")
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -158,6 +174,7 @@ model detalle_factura {
   variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_dfa_variante")
 
   @@id([id_factura, id_variante], map: "pk_detalle_factura")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -179,6 +196,8 @@ model direccion_cliente {
   updated_at          DateTime  @default(now()) @db.Timestamp(6)
   cliente             cliente   @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_dir_cliente")
   factura             factura[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -196,6 +215,8 @@ model empleado {
   factura             factura[]
   movimiento_stock    movimiento_stock[]
   usuarios_backoffice usuarios_backoffice?
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -220,6 +241,7 @@ model factura {
 
   @@index([id_cliente, fecha_emision(sort: Desc)], map: "idx_factura_cliente_fecha")
   @@index([estado, fecha_emision(sort: Desc)], map: "idx_factura_estado")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -238,6 +260,7 @@ model movimiento_stock {
   variante_producto variante_producto @relation(fields: [id_variante], references: [id_variante], map: "fk_mst_variante")
 
   @@index([id_variante, fecha(sort: Desc)], map: "idx_movimiento_variante_fecha")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -254,12 +277,13 @@ model pago {
   factura            factura  @relation(fields: [id_factura], references: [id_factura], map: "fk_pago_factura")
 
   @@index([id_factura], map: "idx_pago_factura")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model producto {
-  id_producto        String              @id(map: "pk_producto") @default(dbgenerated("('P'::text || lpad((nextval('seq_producto'::regclass))::text, 6, '0'::text))")) @db.VarChar(7)
+  id_producto        String              @id(map: "pk_producto") @default(dbgenerated("('P'::text || lpad((nextval('vortex.seq_producto'::regclass))::text, 6, '0'::text))")) @db.VarChar(7)
   id_categoria       String              @db.Char(3)
   nombre             String              @unique(map: "uq_pro_nombre") @db.VarChar(80)
   descripcion_corta  String?             @db.VarChar(200)
@@ -272,6 +296,8 @@ model producto {
   producto_fotos     producto_fotos[]
   promocion_detalle  promocion_detalle[]
   variante_producto  variante_producto[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -289,6 +315,7 @@ model producto_ai {
   producto          producto               @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_pai_producto")
 
   @@index([embedding], map: "idx_producto_ai_embedding")
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -302,6 +329,8 @@ model producto_fotos {
   orden        Int      @default(1)
   created_at   DateTime @default(now()) @db.Timestamp(6)
   producto     producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade, map: "fk_foto_producto")
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -317,6 +346,8 @@ model promocion {
   created_at           DateTime            @default(now()) @db.Timestamp(6)
   updated_at           DateTime            @default(now()) @db.Timestamp(6)
   promocion_detalle    promocion_detalle[]
+
+  @@schema("vortex")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -328,6 +359,7 @@ model promocion_detalle {
   promocion       promocion @relation(fields: [id_promocion], references: [id_promocion], onDelete: Cascade, map: "fk_prd_promocion")
 
   @@unique([id_promocion, id_producto], map: "uq_prom_producto")
+  @@schema("vortex")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -338,6 +370,8 @@ model rol {
   created_at          DateTime              @default(now()) @db.Timestamp(6)
   updated_at          DateTime              @default(now()) @db.Timestamp(6)
   usuarios_backoffice usuarios_backoffice[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -350,6 +384,8 @@ model talla {
   created_at        DateTime            @default(now()) @db.Timestamp(6)
   updated_at        DateTime            @default(now()) @db.Timestamp(6)
   variante_producto variante_producto[]
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -362,6 +398,8 @@ model token_recuperacion {
   usado      Boolean  @default(false)
   created_at DateTime @default(now()) @db.Timestamp(6)
   cliente    cliente  @relation(fields: [id_cliente], references: [id_cliente], onDelete: Cascade, map: "fk_tok_cliente")
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -378,6 +416,8 @@ model usuarios_backoffice {
   audit_log     audit_log[]
   empleado      empleado    @relation(fields: [id_empleado], references: [id_empleado], onDelete: Cascade, map: "fk_ubo_empleado")
   rol           rol         @relation(fields: [id_rol], references: [id_rol], map: "fk_ubo_rol")
+
+  @@schema("vortex")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -404,4 +444,5 @@ model variante_producto {
 
   @@unique([id_producto, id_talla, color], map: "uq_var_combinacion")
   @@index([id_producto], map: "idx_variante_producto")
+  @@schema("vortex")
 }

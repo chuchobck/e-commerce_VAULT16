@@ -39,7 +39,7 @@ export function PrivacidadPage() {
           </h2>
           <p className="text-sm text-text-secondary dark:text-text-secondary-dark leading-relaxed">
             Utilizamos encriptación estándar de la industria (HTTPS, bcrypt para contraseñas, JWT
-            para sesiones). Los pagos con tarjeta se procesan a través de Stripe, un procesador
+            para sesiones). Los pagos se procesan a través de PayPal, un procesador
             certificado PCI DSS. Nunca almacenamos datos completos de tarjetas.
           </p>
         </section>

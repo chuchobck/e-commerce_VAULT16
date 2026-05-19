@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/config/prisma';
 import { NotFoundError, ConflictError } from '@/shared/utils/errors';
 import { registrarAudit, AuditParams } from '@/shared/utils/audit';
-import { refund } from './stripe.service';
+import { refundCapture } from './paypal.service';
 import { ListPagosQuery } from './pagos.schemas';
 
 type AuditCtx = Pick<AuditParams, 'id_usuario_bo' | 'ip' | 'user_agent'>;
@@ -109,15 +109,13 @@ export async function reembolsar(id: number, ctx?: AuditCtx) {
     throw new ConflictError('Solo se pueden reembolsar pagos confirmados (estado COM)');
   }
 
-  // Si es Stripe → crear refund real (o stub)
+  // Si es PayPal y hay capture_id → refund real (o stub)
   let reembolsoExterno: { id: string; status: string } | null = null;
-  if (pago.metodo === 'STRIPE' && pago.referencia_externa) {
-    const montoOriginalCentavos = Math.round(Number(pago.monto) * 100);
-    const refundResult = await refund(pago.referencia_externa, montoOriginalCentavos);
-    reembolsoExterno = { id: refundResult.id, status: refundResult.status ?? 'succeeded' };
+  if (pago.metodo === 'PAYPAL' && pago.referencia_externa) {
+    const refundResult = await refundCapture(pago.referencia_externa, Number(pago.monto));
+    reembolsoExterno = { id: refundResult.id, status: refundResult.status };
   }
 
-  // Crear NUEVO registro de pago con monto negativo — APPEND-ONLY
   const pagoReembolso = await prisma.pago.create({
     data: {
       id_factura: pago.id_factura,

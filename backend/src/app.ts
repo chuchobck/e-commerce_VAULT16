@@ -7,31 +7,27 @@ import { env } from './config/env';
 import { ANTHROPIC_STUB_MODE } from './config/anthropic';
 import { VOYAGE_STUB_MODE } from './config/voyage';
 import { AZURE_STUB_MODE } from './config/azureBlob';
-import { STRIPE_STUB_MODE } from './config/stripe';
+import { PAYPAL_STUB_MODE } from './config/paypal';
 import { prisma } from './config/prisma';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import { globalRateLimit } from './middleware/rateLimit';
 import { apiRouter } from './routes/index';
-import { webhooksRouter } from './modules/pagos/webhooks.routes';
 
 const app = express();
 
-// ── Trust proxy (Azure App Service / load balancer) ──────────────────────────
+// ── Trust proxy (Replit / load balancer) ─────────────────────────────────────
 app.set('trust proxy', 1);
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 app.use(helmet());
 
-// ── CORS — NO aplicar en webhooks (Stripe no manda Origin) ───────────────────
+// ── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
 app.use(
   /^\/api\/v1\//,
   cors({ origin: allowedOrigins, credentials: true }),
 );
-
-// ── Stripe Webhook — RAW parser ANTES de express.json() ─────────────────────
-app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhooksRouter);
 
 // ── Parsers ──────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
@@ -58,7 +54,7 @@ app.get('/health', async (_req, res) => {
     anthropic: ANTHROPIC_STUB_MODE ? 'stub' : 'configured',
     voyage: VOYAGE_STUB_MODE ? 'stub' : 'configured',
     azureBlob: AZURE_STUB_MODE ? 'stub' : 'configured',
-    stripe: STRIPE_STUB_MODE ? 'stub' : 'configured',
+    paypal: PAYPAL_STUB_MODE ? 'stub' : 'configured',
   } as const;
 
   const status = dbStatus === 'fail' ? 'degraded' : 'ok';

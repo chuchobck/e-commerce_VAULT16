@@ -3,6 +3,8 @@ import type { ApiResponse } from '@/shared/types/api.types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export type MetodoPago = 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA'
+
 export interface CheckoutPreview {
   items: {
     varianteId: number
@@ -27,15 +29,20 @@ export interface CheckoutValidacion {
 }
 
 export interface IniciarPagoResponse {
-  clientSecret: string | null
-  idFactura: string
-  metodo: 'TARJETA' | 'TRANSFERENCIA'
-  instrucciones?: string
-  datosBancarios?: {
+  metodo: MetodoPago
+  total?: number
+  paypal_order_id?: string
+  paypal_status?: string
+  paypal_stub?: boolean
+  id_factura?: string
+  estado?: string
+  instrucciones_transferencia?: {
     banco: string
     cuenta: string
-    titular: string
+    tipo: string
+    beneficiario: string
     ruc: string
+    referencia: string
   }
 }
 
@@ -57,26 +64,37 @@ export interface ConfirmacionResponse {
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 
-export async function getCheckoutPreview(): Promise<CheckoutPreview> {
-  const res = await api.get<ApiResponse<CheckoutPreview>>('/api/checkout/preview')
-  return res.data.data
-}
-
 export async function validarCarrito(): Promise<CheckoutValidacion> {
   const res = await api.get<ApiResponse<CheckoutValidacion>>('/api/carrito/validar')
   return res.data.data
 }
 
 export async function iniciarPago(payload: {
-  direccionId: number
-  metodoPago: 'TARJETA' | 'TRANSFERENCIA'
+  id_direccion_envio: number
+  metodo_pago: MetodoPago
 }): Promise<IniciarPagoResponse> {
   const res = await api.post<ApiResponse<IniciarPagoResponse>>('/api/checkout/iniciar-pago', payload)
   return res.data.data
 }
 
-export async function confirmarPago(idFactura: string): Promise<ConfirmacionResponse> {
-  const res = await api.post<ApiResponse<ConfirmacionResponse>>('/api/checkout/confirmar', { idFactura })
+export async function capturarPayPal(payload: {
+  id_direccion_envio: number
+  paypal_order_id: string
+}): Promise<{ id_factura: string; total: number; estado: string }> {
+  const res = await api.post<ApiResponse<{ id_factura: string; total: number; estado: string }>>(
+    '/api/checkout/paypal/capturar',
+    payload,
+  )
+  return res.data.data
+}
+
+export async function confirmarTarjetaSimulada(payload: {
+  id_direccion_envio: number
+}): Promise<{ id_factura: string; total: number; estado: string }> {
+  const res = await api.post<ApiResponse<{ id_factura: string; total: number; estado: string }>>(
+    '/api/checkout/tarjeta/confirmar',
+    payload,
+  )
   return res.data.data
 }
 

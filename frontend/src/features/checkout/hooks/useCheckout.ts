@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 
 export type CheckoutStep = 'direccion' | 'pago' | 'confirmacion'
+export type MetodoPagoUI = 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA'
 
 const STEPS: CheckoutStep[] = ['direccion', 'pago', 'confirmacion']
 
@@ -8,11 +9,11 @@ interface UseCheckoutReturn {
   currentStep: CheckoutStep
   stepIndex: number
   direccionId: number | null
-  metodoPago: 'TARJETA' | 'TRANSFERENCIA' | null
+  metodoPago: MetodoPagoUI | null
   idFactura: string | null
 
   setDireccion: (id: number) => void
-  setMetodoPago: (m: 'TARJETA' | 'TRANSFERENCIA') => void
+  setMetodoPago: (m: MetodoPagoUI) => void
   setIdFactura: (id: string) => void
   nextStep: () => void
   prevStep: () => void
@@ -23,7 +24,7 @@ interface UseCheckoutReturn {
 export function useCheckout(): UseCheckoutReturn {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('direccion')
   const [direccionId, setDireccionId] = useState<number | null>(null)
-  const [metodoPago, setMetodo] = useState<'TARJETA' | 'TRANSFERENCIA' | null>(null)
+  const [metodoPago, setMetodo] = useState<MetodoPagoUI | null>(null)
   const [idFactura, setIdFact] = useState<string | null>(null)
 
   const stepIndex = STEPS.indexOf(currentStep)

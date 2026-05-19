@@ -13,9 +13,11 @@ const envSchema = z.object({
   VOYAGE_API_KEY: z.string().optional(),
   AZURE_STORAGE_CONNECTION_STRING: z.string().optional(),
   AZURE_BLOB_CONTAINER: z.string().default('vortex-productos'),
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
+  PAYPAL_CLIENT_ID: z.string().optional(),
+  PAYPAL_CLIENT_SECRET: z.string().optional(),
+  PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
+  FRONTEND_URL: z.string().default('http://localhost:5000'),
+  CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174,http://localhost:5000'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -34,5 +36,3 @@ if (!env.VOYAGE_API_KEY)
   console.warn('[WARN] VOYAGE_API_KEY no configurada — embeddings en modo stub');
 if (!env.AZURE_STORAGE_CONNECTION_STRING)
   console.warn('[WARN] Azure Blob no configurada — fotos en modo stub');
-if (!env.STRIPE_SECRET_KEY)
-  console.warn('[WARN] Stripe no configurada — pagos en modo stub');

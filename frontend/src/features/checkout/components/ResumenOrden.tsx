@@ -4,7 +4,7 @@ import type { CheckoutStep } from '@/features/checkout/hooks/useCheckout'
 
 interface ResumenOrdenProps {
   direccionLabel?: string
-  metodoPago?: 'TARJETA' | 'TRANSFERENCIA' | null
+  metodoPago?: 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA' | null
   onEditStep: (step: CheckoutStep) => void
   currentStep: CheckoutStep
 }

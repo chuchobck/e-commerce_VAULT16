@@ -66,7 +66,7 @@ export function CheckoutPage() {
   }, [nextStep])
 
   const handlePagoSuccess = useCallback(
-    (metodo: 'TARJETA' | 'TRANSFERENCIA', idFactura: string) => {
+    (metodo: 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA', idFactura: string) => {
       setMetodoPago(metodo)
       setIdFactura(idFactura)
       navigate(`/checkout/confirmacion/${idFactura}`)

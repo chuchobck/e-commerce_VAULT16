@@ -4,8 +4,13 @@ import { NotFoundError, ConflictError, ForbiddenError } from '@/shared/utils/err
 import { registrarAudit } from '@/shared/utils/audit';
 import { getDescuentoActivoProducto } from '@/shared/utils/promocionesHelper';
 import { generarIdFactura } from '@/shared/utils/facturaNumber';
-import { createPaymentIntent } from '@/modules/pagos/stripe.service';
-import { PreviewInput, IniciarPagoInput } from './checkout.schemas';
+import { createOrder, captureOrder } from '@/modules/pagos/paypal.service';
+import {
+  PreviewInput,
+  IniciarPagoInput,
+  CapturarPayPalInput,
+  ConfirmarTarjetaSimuladaInput,
+} from './checkout.schemas';
 
 // ─── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -13,8 +18,10 @@ interface ItemCarrito {
   id_carrito_det: number;
   id_variante: number;
   cantidad: number;
-  variante: {
+  variante_producto: {
     var_saldo_final: number | null;
+    color: string;
+    sku: string;
     producto: {
       id_producto: string;
       nombre: string;
@@ -23,8 +30,6 @@ interface ItemCarrito {
       producto_fotos: { url_foto: string }[];
     };
     talla: { descripcion: string };
-    color: string;
-    sku: string;
   };
 }
 
@@ -47,11 +52,13 @@ interface ItemCalculado {
   };
 }
 
+export type MetodoPagoBD = 'PAYPAL' | 'TARJETA' | 'TRANSFERENCIA';
+
 export interface ConfirmarPayload {
   id_cliente: number;
   id_direccion_envio: number;
-  metodo_pago: 'STRIPE' | 'TRANSFERENCIA';
-  referencia_externa?: string;
+  metodo_pago: MetodoPagoBD;
+  referencia_externa?: string | null;
   estado_pago: 'COM' | 'PEN';
 }
 
@@ -89,7 +96,7 @@ async function getCarritoConItems(idCliente: number) {
 
 async function validarItems(items: ItemCarrito[]) {
   for (const det of items) {
-    const v = det.variante;
+    const v = det.variante_producto;
     const p = v.producto;
     if (p.estado_prod !== 'ACT') {
       throw new ConflictError(`El producto "${p.nombre}" no está disponible`);
@@ -106,7 +113,7 @@ async function validarItems(items: ItemCarrito[]) {
 async function calcularItems(items: ItemCarrito[]): Promise<ItemCalculado[]> {
   return Promise.all(
     items.map(async (det) => {
-      const v = det.variante;
+      const v = det.variante_producto;
       const p = v.producto;
       const precioUnitario = Number(p.precio_venta);
       const descuentoPct = await getDescuentoActivoProducto(p.id_producto);
@@ -155,48 +162,53 @@ async function getCliente(idCliente: number) {
   return cliente;
 }
 
+async function calcularTotales(idCliente: number) {
+  const carrito = await getCarritoConItems(idCliente);
+  if (!carrito || carrito.carrito_detalle.length === 0) {
+    throw new ConflictError('El carrito está vacío');
+  }
+  const items = carrito.carrito_detalle as unknown as ItemCarrito[];
+  await validarItems(items);
+  const itemsCalc = await calcularItems(items);
+  const subtotal = itemsCalc.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
+  const descuento = itemsCalc.reduce((s, i) => s + i.descuento_item, 0);
+  // IVA Ecuador 15% incluido en el precio_venta (B2C). Lo desglosamos para la UI.
+  const total = subtotal - descuento;
+  const baseImponible = total / 1.15;
+  const iva = total - baseImponible;
+  return { carrito, items, itemsCalc, subtotal, descuento, total, baseImponible, iva };
+}
+
 // ─── Preview ───────────────────────────────────────────────────────────────────
 
 export async function preview(idCliente: number, data: PreviewInput) {
   await getCliente(idCliente);
   const direccion = await getDireccion(data.id_direccion_envio, idCliente);
+  const { itemsCalc, subtotal, descuento, total, baseImponible, iva } =
+    await calcularTotales(idCliente);
 
-  const carrito = await getCarritoConItems(idCliente);
-  if (!carrito || carrito.carrito_detalle.length === 0) {
-    throw new ConflictError('El carrito está vacío');
-  }
-
-  const items = carrito.carrito_detalle as unknown as ItemCarrito[];
-  await validarItems(items);
-  const itemsCalculados = await calcularItems(items);
-
-  const subtotal = itemsCalculados.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
-  const descuento_total = itemsCalculados.reduce((s, i) => s + i.descuento_item, 0);
-  const total = subtotal - descuento_total;
-
-  return { items: itemsCalculados, subtotal, descuento_total, total, direccion };
+  return {
+    items: itemsCalc,
+    subtotal,
+    descuento_total: descuento,
+    base_imponible: baseImponible,
+    iva_porcentaje: 15,
+    iva,
+    total,
+    direccion,
+  };
 }
 
-// ─── Transacción principal ─────────────────────────────────────────────────────
+// ─── Confirmar (transacción principal) ─────────────────────────────────────────
 
 export async function confirmar(payload: ConfirmarPayload) {
   const { id_cliente, id_direccion_envio, metodo_pago, referencia_externa, estado_pago } = payload;
 
-  const carrito = await getCarritoConItems(id_cliente);
-  if (!carrito || carrito.carrito_detalle.length === 0) {
-    throw new ConflictError('El carrito está vacío');
-  }
-
-  const itemsRaw = carrito.carrito_detalle as unknown as ItemCarrito[];
-  const itemsCalculados = await calcularItems(itemsRaw);
-
-  const subtotal = itemsCalculados.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
-  const descuento_total = itemsCalculados.reduce((s, i) => s + i.descuento_item, 0);
-  const total = subtotal - descuento_total;
+  const { carrito, items: itemsRaw, itemsCalc, subtotal, descuento, total } =
+    await calcularTotales(id_cliente);
 
   const factura = await prisma.$transaction(
     async (tx) => {
-      // 1. Bloquear filas de variantes y re-validar stock (SELECT ... FOR UPDATE)
       const idVariantes = itemsRaw.map((i) => i.id_variante);
       const variantesLocked = await tx.$queryRaw<
         { id_variante: number; var_saldo_final: number }[]
@@ -218,28 +230,24 @@ export async function confirmar(payload: ConfirmarPayload) {
         }
       }
 
-      // 2. Generar id_factura dentro de la transacción (con lock)
       const idFactura = await generarIdFactura(tx);
 
-      // 3. INSERT factura
       const nuevaFactura = await tx.factura.create({
         data: {
           id_factura: idFactura,
           id_cliente,
           id_direccion_envio,
           subtotal: new Prisma.Decimal(subtotal.toFixed(3)),
-          descuento_total: new Prisma.Decimal(descuento_total.toFixed(3)),
+          descuento_total: new Prisma.Decimal(descuento.toFixed(3)),
           total: new Prisma.Decimal(total.toFixed(3)),
           estado: 'EMI',
         },
       });
 
-      // 4. Para cada item: detalle + stock update + movimiento
-      for (const item of itemsCalculados) {
+      for (const item of itemsCalc) {
         const stockActual = stockMap.get(item.id_variante) ?? 0;
         const nuevoSaldo = stockActual - item.cantidad;
 
-        // a. INSERT detalle_factura (SNAPSHOT de precio)
         await tx.detalle_factura.create({
           data: {
             id_factura: idFactura,
@@ -250,26 +258,23 @@ export async function confirmar(payload: ConfirmarPayload) {
           },
         });
 
-        // b. UPDATE var_qty_egresos += cantidad
         await tx.variante_producto.update({
           where: { id_variante: item.id_variante },
           data: { var_qty_egresos: { increment: item.cantidad } },
         });
 
-        // c. INSERT movimiento_stock
         await tx.movimiento_stock.create({
           data: {
             id_variante: item.id_variante,
             tipo: 'EGR',
             cantidad: item.cantidad,
-            referencia: `FAC-${idFactura}`,
+            referencia: `FAC-${idFactura}`.slice(0, 20),
             saldo_post: nuevoSaldo,
             observacion: `Venta factura ${idFactura}`,
           },
         });
       }
 
-      // 5. INSERT pago
       await tx.pago.create({
         data: {
           id_factura: idFactura,
@@ -280,7 +285,6 @@ export async function confirmar(payload: ConfirmarPayload) {
         },
       });
 
-      // 6. Si pago confirmado → factura pasa a PAG
       if (estado_pago === 'COM') {
         await tx.factura.update({
           where: { id_factura: idFactura },
@@ -288,7 +292,6 @@ export async function confirmar(payload: ConfirmarPayload) {
         });
       }
 
-      // 7. Vaciar carrito (DELETE FÍSICO de detalles)
       await tx.carrito_detalle.deleteMany({
         where: { id_carrito: carrito.id_carrito },
       });
@@ -298,7 +301,6 @@ export async function confirmar(payload: ConfirmarPayload) {
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
 
-  // 8. Auditoría (fuera de tx — nunca rompe el flujo)
   await registrarAudit({
     tabla: 'factura',
     id_registro: factura.id_factura,
@@ -308,7 +310,7 @@ export async function confirmar(payload: ConfirmarPayload) {
       metodo_pago,
       total,
       estado: factura.estado,
-      items: itemsCalculados.map((i) => ({ id_variante: i.id_variante, cantidad: i.cantidad })),
+      items: itemsCalc.map((i) => ({ id_variante: i.id_variante, cantidad: i.cantidad })),
     },
     id_cliente,
   });
@@ -327,31 +329,32 @@ export async function iniciarPago(idCliente: number, data: IniciarPagoInput) {
   await getCliente(idCliente);
   await getDireccion(data.id_direccion_envio, idCliente);
 
-  const carrito = await getCarritoConItems(idCliente);
-  if (!carrito || carrito.carrito_detalle.length === 0) {
-    throw new ConflictError('El carrito está vacío');
-  }
-
-  const itemsRaw = carrito.carrito_detalle as unknown as ItemCarrito[];
-  await validarItems(itemsRaw);
-
-  if (data.metodo_pago === 'STRIPE') {
-    const itemsCalculados = await calcularItems(itemsRaw);
-    const total = itemsCalculados.reduce((s, i) => s + i.subtotal_linea, 0);
-
-    const intent = await createPaymentIntent(total, {
-      id_cliente: String(idCliente),
-      id_direccion_envio: String(data.id_direccion_envio),
+  if (data.metodo_pago === 'PAYPAL') {
+    const { total } = await calcularTotales(idCliente);
+    const order = await createOrder(total, {
+      id_cliente: idCliente,
+      id_direccion_envio: data.id_direccion_envio,
     });
-
     return {
-      metodo: 'STRIPE',
-      client_secret: intent.client_secret,
-      idempotency_key: intent.id,
+      metodo: 'PAYPAL' as const,
+      paypal_order_id: order.id,
+      paypal_status: order.status,
+      paypal_stub: order.stub,
+      total,
     };
   }
 
-  // TRANSFERENCIA → confirmar directamente
+  if (data.metodo_pago === 'TARJETA') {
+    // Tarjeta simulada: ningún dato de tarjeta llega al backend.
+    // El frontend muestra el formulario visual y luego llama /capturar-tarjeta.
+    const { total } = await calcularTotales(idCliente);
+    return {
+      metodo: 'TARJETA' as const,
+      total,
+    };
+  }
+
+  // TRANSFERENCIA → confirmar directamente como PEN
   const resultado = await confirmar({
     id_cliente: idCliente,
     id_direccion_envio: data.id_direccion_envio,
@@ -360,7 +363,7 @@ export async function iniciarPago(idCliente: number, data: IniciarPagoInput) {
   });
 
   return {
-    metodo: 'TRANSFERENCIA',
+    metodo: 'TRANSFERENCIA' as const,
     id_factura: resultado.id_factura,
     total: resultado.total,
     estado: resultado.estado,
@@ -368,9 +371,108 @@ export async function iniciarPago(idCliente: number, data: IniciarPagoInput) {
       banco: 'Banco Pichincha',
       cuenta: '2200123456',
       tipo: 'Corriente',
-      beneficiario: 'VORTEX S.A.',
+      beneficiario: 'VAULT 16 S.A.',
       ruc: '1791234567001',
       referencia: resultado.id_factura,
     },
   };
+}
+
+// ─── Capturar pago PayPal ──────────────────────────────────────────────────────
+
+export async function capturarPayPal(idCliente: number, data: CapturarPayPalInput) {
+  await getCliente(idCliente);
+  await getDireccion(data.id_direccion_envio, idCliente);
+
+  // Recalculamos el total del carrito ANTES de capturar.
+  const { total } = await calcularTotales(idCliente);
+  const expectedCustomId = `${idCliente}:${data.id_direccion_envio}`;
+
+  const captura = await captureOrder(data.paypal_order_id);
+
+  if (captura.status !== 'COMPLETED') {
+    throw new ConflictError(`Pago PayPal no completado (status: ${captura.status})`);
+  }
+
+  // ── Verificaciones de integridad (sólo para modo real) ────────────────
+  if (!captura.stub) {
+    if (captura.currencyCode && captura.currencyCode !== 'USD') {
+      throw new ConflictError(
+        `Moneda PayPal inválida: ${captura.currencyCode} (esperado USD)`,
+      );
+    }
+    if (captura.amountValue && Number(captura.amountValue).toFixed(2) !== total.toFixed(2)) {
+      throw new ConflictError(
+        `Monto PayPal (${captura.amountValue}) no coincide con el total del carrito (${total.toFixed(2)})`,
+      );
+    }
+    if (captura.customId && captura.customId !== expectedCustomId) {
+      throw new ConflictError(
+        `Orden PayPal no pertenece a este cliente/dirección (custom_id mismatch)`,
+      );
+    }
+  }
+
+  // ── Idempotencia: si ya procesamos esta orden/captura, devolver la factura existente ──
+  const refId = captura.captureId ?? captura.id;
+  const yaProcesado = await prisma.pago.findFirst({
+    where: { referencia_externa: refId, metodo: 'PAYPAL' },
+    select: {
+      id_factura: true,
+      factura: { select: { total: true, estado: true, fecha_emision: true } },
+    },
+  });
+  if (yaProcesado) {
+    return {
+      id_factura: yaProcesado.id_factura,
+      total: Number(yaProcesado.factura.total),
+      estado: yaProcesado.factura.estado,
+      fecha_emision: yaProcesado.factura.fecha_emision,
+      paypal: {
+        order_id: captura.id,
+        capture_id: captura.captureId,
+        payer_email: captura.payerEmail,
+        stub: captura.stub,
+        idempotent_replay: true,
+      },
+    };
+  }
+
+  const resultado = await confirmar({
+    id_cliente: idCliente,
+    id_direccion_envio: data.id_direccion_envio,
+    metodo_pago: 'PAYPAL',
+    referencia_externa: refId,
+    estado_pago: 'COM',
+  });
+
+  return {
+    ...resultado,
+    paypal: {
+      order_id: captura.id,
+      capture_id: captura.captureId,
+      payer_email: captura.payerEmail,
+      stub: captura.stub,
+    },
+  };
+}
+
+// ─── Confirmar tarjeta simulada ────────────────────────────────────────────────
+
+export async function confirmarTarjetaSimulada(
+  idCliente: number,
+  data: ConfirmarTarjetaSimuladaInput,
+) {
+  await getCliente(idCliente);
+  await getDireccion(data.id_direccion_envio, idCliente);
+
+  const resultado = await confirmar({
+    id_cliente: idCliente,
+    id_direccion_envio: data.id_direccion_envio,
+    metodo_pago: 'TARJETA',
+    referencia_externa: `SIM-${Date.now()}`,
+    estado_pago: 'COM',
+  });
+
+  return resultado;
 }
