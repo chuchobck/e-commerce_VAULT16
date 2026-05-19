@@ -14,7 +14,7 @@
 --   $2b$10$K9Lxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 --
 -- Hacé un Find & Replace en este archivo:
---   buscar:    $2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2
+--   buscar:    $2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He
 --   reemplazar: el hash que generaste
 --
 -- Si corrés el seed sin hacer este paso, el INSERT de usuarios_backoffice
@@ -124,27 +124,27 @@ INSERT INTO empleado (cedula, nombre1, apellido1, telefono, estado_emp) VALUES
 
 INSERT INTO usuarios_backoffice (email, password_hash, id_rol, id_empleado) VALUES
     ('admin@vault16.ec',
-     '$2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2',
+     '$2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He',
      (SELECT id_rol FROM rol WHERE nombre = 'ADMIN'),
      (SELECT id_empleado FROM empleado WHERE cedula = '1713456789')),
 
     ('marketing@vault16.ec',
-     '$2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2',
+     '$2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He',
      (SELECT id_rol FROM rol WHERE nombre = 'MARKETING'),
      (SELECT id_empleado FROM empleado WHERE cedula = '1723456780')),
 
     ('bodega@vault16.ec',
-     '$2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2',
+     '$2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He',
      (SELECT id_rol FROM rol WHERE nombre = 'BODEGA'),
      (SELECT id_empleado FROM empleado WHERE cedula = '1733456781')),
 
     ('ventas@vault16.ec',
-     '$2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2',
+     '$2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He',
      (SELECT id_rol FROM rol WHERE nombre = 'VENDEDOR'),
      (SELECT id_empleado FROM empleado WHERE cedula = '1743456782')),
 
     ('reportes@vault16.ec',
-     '$2a$10$KNc9VDyvYBbuyGJFrkM8BOOTQJffexqS9ytF1waMxIVPPbbem4Ts2',
+     '$2a$10$WpjGKkMYFPUD2qu6q6mS4.MPq3BZ3XAUzp.BB7ERLCHnO57OkX6He',
      (SELECT id_rol FROM rol WHERE nombre = 'REPORTES'),
      (SELECT id_empleado FROM empleado WHERE cedula = '1753456783'));
 
@@ -619,7 +619,7 @@ FROM producto;
 
 INSERT INTO cliente (email, password_hash, ruc_cedula, nombre1, apellido1, telefono, email_verificado, estado) VALUES
     ('test@vault16.ec',
-     '$2a$10$.5wnsBddg1RjcYnNDCA7c.4QTYZ1/tKxrbf763GDuY2jU8v0rFktu',
+     '$2a$10$d1valDjZSQNh4MLYHOg1eOQb5uygw76w0bcT6ZUz2pwm08bLm9If2',
      '1790012345',
      'Cliente',
      'Prueba',

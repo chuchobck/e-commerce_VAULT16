@@ -38,6 +38,9 @@ SELECT 'variantes           = ' || COUNT(*) FROM variante_producto;
 SELECT 'promociones         = ' || COUNT(*) FROM promocion;
 SQL
 
+echo "▶ Verificando hashes bcrypt vs contraseñas del repo …"
+node "$(cd "$(dirname "$0")" && pwd)/verify-hashes.cjs"
+
 echo "✅ Bootstrap completo."
 echo "   Esperado: 24 productos / 142 variantes / 6 promos / 5 backoffice / 1 cliente."
 echo "   Credenciales: Backoffice → Vault16Admin!   Cliente test (test@vault16.ec) → Vault16Test!"

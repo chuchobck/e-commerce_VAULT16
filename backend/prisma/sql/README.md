@@ -42,7 +42,7 @@ El script:
 - **Backoffice** (5 usuarios) — contraseña `Vault16Admin!`:
   - `admin@vault16.ec` → rol `ADMIN`
   - `marketing@vault16.ec` → rol `MARKETING`
-  - `vendedor1@vault16.ec` → rol `VENDEDOR`
+  - `ventas@vault16.ec` → rol `VENDEDOR`
   - `bodega@vault16.ec` → rol `BODEGA`
   - `reportes@vault16.ec` → rol `REPORTES`
 - **Cliente test** — `test@vault16.ec` / `Vault16Test!`
