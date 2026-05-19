@@ -5,6 +5,7 @@ import { ChevronRight, Minus, Plus, Check, Ruler } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
 import { SizeCalculatorModal } from './SizeCalculatorModal'
 import { useAgregarAlCarrito } from '@/features/producto/hooks/useAgregarAlCarrito'
+import { usePromoMap } from '@/features/promociones/hooks/usePromoMap'
 import { cn } from '@/shared/utils/cn'
 import type { Producto, Variante } from '@/shared/types/producto.types'
 
@@ -226,8 +227,9 @@ export function ProductInfo({ producto }: ProductInfoProps) {
   }, [producto, selectedVariante, cantidad, agregar])
 
   const canAdd = selectedVariante && currentStock > 0 && !isAdding
-  const descuento = producto.porcentajeDescuentoActivo
-  const precioOriginal = descuento ? (producto.precio / (1 - descuento / 100)) : null
+  const promoMap = usePromoMap()
+  const descuento = producto.porcentajeDescuentoActivo ?? promoMap.get(producto.id) ?? 0
+  const precioFinal = descuento > 0 ? producto.precio * (1 - descuento / 100) : producto.precio
 
   return (
     <div>
@@ -246,12 +248,12 @@ export function ProductInfo({ producto }: ProductInfoProps) {
       {/* Price */}
       <div className="flex items-center gap-3 mt-4">
         <span className="text-2xl font-semibold text-accent">
-          ${producto.precio.toFixed(2)}
+          ${precioFinal.toFixed(2)}
         </span>
-        {descuento && precioOriginal && (
+        {descuento > 0 && (
           <>
             <span className="text-lg text-text-muted dark:text-text-muted-dark line-through">
-              ${precioOriginal.toFixed(2)}
+              ${producto.precio.toFixed(2)}
             </span>
             <span className="px-2 py-0.5 text-xs font-semibold bg-accent text-white rounded-sm">
               -{descuento}%

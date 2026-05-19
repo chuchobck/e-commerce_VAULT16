@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Producto } from '@/shared/types/producto.types'
+import { usePromoMap } from '@/features/promociones/hooks/usePromoMap'
 
 // ─── Procedural SVG Placeholder (seeded by product id) ───────────────────────
 
@@ -128,8 +129,11 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
     navigate(`/producto/${producto.id}`)
   }
 
-  const precioFormateado = `$${producto.precio.toFixed(2)}`
-  const descuento = producto.porcentajeDescuentoActivo
+  const promoMap = usePromoMap()
+  const descuento = producto.porcentajeDescuentoActivo ?? promoMap.get(producto.id) ?? 0
+  const precioConDescuento = descuento > 0 ? producto.precio * (1 - descuento / 100) : producto.precio
+  const precioFormateado = `$${precioConDescuento.toFixed(2)}`
+  const precioOriginalFormateado = `$${producto.precio.toFixed(2)}`
 
   return (
     <article
@@ -138,7 +142,11 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
       role="link"
       tabIndex={0}
       className="group cursor-pointer"
-      aria-label={`${producto.nombre} — ${precioFormateado}`}
+      aria-label={
+        descuento > 0
+          ? `${producto.nombre} — ${precioFormateado} (antes ${precioOriginalFormateado}, -${descuento}%)`
+          : `${producto.nombre} — ${precioFormateado}`
+      }
     >
       {/* Image container */}
       <div className="relative aspect-product overflow-hidden rounded-md bg-bg-hover dark:bg-bg-hover-dark border border-transparent group-hover:border-accent transition-colors duration-fast">
@@ -152,7 +160,7 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
         </div>
 
         {/* Promo badge */}
-        {descuento && descuento > 0 && (
+        {descuento > 0 && (
           <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-semibold bg-accent text-white rounded-sm">
             -{descuento}%
           </span>
@@ -167,9 +175,18 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
         <p className="text-xs font-mono uppercase text-text-muted dark:text-text-muted-dark tracking-wider">
           {producto.categoria.nombre}
         </p>
-        <p className="text-sm font-semibold text-text-primary dark:text-text-primary-dark">
-          {precioFormateado}
-        </p>
+        {descuento > 0 ? (
+          <p className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-accent">{precioFormateado}</span>
+            <span className="text-xs text-text-muted dark:text-text-muted-dark line-through">
+              {precioOriginalFormateado}
+            </span>
+          </p>
+        ) : (
+          <p className="text-sm font-semibold text-text-primary dark:text-text-primary-dark">
+            {precioFormateado}
+          </p>
+        )}
         <ColorDots variantes={producto.variantes} />
       </div>
     </article>
