@@ -12,6 +12,7 @@ export interface LoginResponse {
 
 export interface RegisterResponse {
   cliente: Cliente
+  token: string
   message: string
 }
 
@@ -39,7 +40,7 @@ export async function registerCliente(payload: {
   apellido1: string
   telefono?: string
 }): Promise<RegisterResponse> {
-  const res = await api.post<ApiResponse<{ cliente: RawCliente; message: string }>>(
+  const res = await api.post<ApiResponse<{ cliente: RawCliente; token: string; message: string }>>(
     '/auth/register-cliente',
     {
       email: payload.email,
@@ -52,6 +53,7 @@ export async function registerCliente(payload: {
   )
   return {
     cliente: mapCliente(res.data.data.cliente),
+    token: res.data.data.token,
     message: res.data.data.message,
   }
 }

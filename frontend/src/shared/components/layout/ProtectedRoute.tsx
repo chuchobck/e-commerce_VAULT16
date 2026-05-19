@@ -8,19 +8,18 @@ interface ProtectedRouteProps {
 /**
  * HOC that verifies authentication.
  * - Not authenticated → redirect to /login with returnUrl
- * - Authenticated but email not verified → redirect to /verify-email-pending
+ *
+ * Nota: ya NO bloqueamos por email_verificado. El cliente recién registrado
+ * puede acceder al checkout sin verificar el email; el banner global en el
+ * header se encarga de recordárselo.
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, cliente } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const location = useLocation()
 
   if (!isAuthenticated) {
     const returnUrl = encodeURIComponent(location.pathname + location.search)
     return <Navigate to={`/login?returnUrl=${returnUrl}`} replace />
-  }
-
-  if (cliente && !cliente.emailVerificado) {
-    return <Navigate to="/verify-email-pending" replace />
   }
 
   return <>{children}</>

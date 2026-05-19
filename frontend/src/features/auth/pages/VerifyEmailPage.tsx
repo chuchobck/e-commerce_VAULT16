@@ -4,11 +4,14 @@ import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
 import { useVerifyEmail } from '@/features/auth/hooks/useVerifyEmail'
+import { useAuthStore } from '@/shared/stores/authStore'
 
 export function VerifyEmailPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const mutation = useVerifyEmail()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const updateProfile = useAuthStore((s) => s.updateProfile)
 
   useEffect(() => {
     if (token) {
@@ -16,6 +19,14 @@ export function VerifyEmailPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
+
+  // Cuando verifica con éxito y ya está logueado, actualizamos el estado
+  // local y lo dejamos donde estaba (no lo mandamos a /login de nuevo).
+  useEffect(() => {
+    if (mutation.isSuccess && isAuthenticated) {
+      updateProfile({ emailVerificado: true })
+    }
+  }, [mutation.isSuccess, isAuthenticated, updateProfile])
 
   if (mutation.isPending) {
     return (
@@ -58,10 +69,16 @@ export function VerifyEmailPage() {
         ¡Email verificado!
       </h3>
       <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-6">
-        Tu cuenta está activa. Ya podés iniciar sesión.
+        {isAuthenticated
+          ? 'Tu cuenta quedó completamente activa.'
+          : 'Tu cuenta está activa. Ya podés iniciar sesión.'}
       </p>
-      <Button variant="primary" size="md" onClick={() => navigate('/login')}>
-        Iniciar sesión
+      <Button
+        variant="primary"
+        size="md"
+        onClick={() => navigate(isAuthenticated ? '/' : '/login')}
+      >
+        {isAuthenticated ? 'Ir al inicio' : 'Iniciar sesión'}
       </Button>
     </motion.div>
   )

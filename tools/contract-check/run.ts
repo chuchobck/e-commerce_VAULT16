@@ -448,7 +448,7 @@ async function main() {
       nombre1: 'Contract',
       apellido1: 'Check',
     }),
-    ApiOk(z.object({ cliente: RawCliente, message: z.string() })),
+    ApiOk(z.object({ cliente: RawCliente, token: z.string(), message: z.string() })),
     { expectStatus: 201 },
   );
 

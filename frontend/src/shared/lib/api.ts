@@ -27,7 +27,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status
-    const code   = error.response?.data?.error?.code
 
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY)
@@ -35,9 +34,9 @@ api.interceptors.response.use(
       window.location.href = `/login?returnUrl=${returnUrl}`
     }
 
-    if (status === 403 && code === 'EMAIL_NOT_VERIFIED') {
-      window.location.href = '/verify-email-pending'
-    }
+    // Nota: el bloqueo por EMAIL_NOT_VERIFIED fue removido en el backend.
+    // Si por algún motivo vuelve un 403 con ese code, dejamos que la UI
+    // del endpoint correspondiente lo muestre como error normal, sin redirigir.
 
     return Promise.reject(error)
   },

@@ -156,9 +156,8 @@ async function getCliente(idCliente: number) {
     select: { id_cliente: true, email_verificado: true, nombre1: true, apellido1: true, email: true },
   });
   if (!cliente) throw new NotFoundError('Cliente no encontrado');
-  if (!cliente.email_verificado) {
-    throw new ForbiddenError('Debes verificar tu email antes de realizar una compra');
-  }
+  // Nota: ya NO bloqueamos por email_verificado. El cliente puede comprar
+  // sin verificar el email; el frontend muestra un banner recordándoselo.
   return cliente;
 }
 

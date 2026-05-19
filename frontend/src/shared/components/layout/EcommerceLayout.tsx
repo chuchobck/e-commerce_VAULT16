@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { EmailVerificationBanner } from './EmailVerificationBanner'
 import { ToastProvider } from '@/shared/components/feedback/Toast'
 import { CarritoDrawer } from '@/features/carrito/components/CarritoDrawer'
 import { useCarrito } from '@/features/carrito/hooks/useCarrito'
@@ -18,6 +19,7 @@ export function EcommerceLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-bg-base dark:bg-bg-base-dark">
       <Header />
+      <EmailVerificationBanner />
       <main className="flex-1">
         <Outlet />
       </main>

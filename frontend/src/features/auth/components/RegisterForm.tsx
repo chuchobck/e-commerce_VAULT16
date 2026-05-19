@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Mail, Lock, Eye, EyeOff, User, Phone, FileText, CheckCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Mail, Lock, Eye, EyeOff, User, Phone, FileText } from 'lucide-react'
 import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
 import { RegisterSchema, type RegisterInput } from '@/features/auth/schemas/auth.schemas'
@@ -36,7 +35,14 @@ function PasswordRules({ password }: { password: string }) {
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
+  const [searchParams] = useSearchParams()
   const mutation = useRegister()
+
+  // Preserve returnUrl so the link back to /login no pierde el contexto
+  const returnUrl = searchParams.get('returnUrl')
+  const loginHref = returnUrl
+    ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    : '/login'
 
   const {
     register,
@@ -52,31 +58,8 @@ export function RegisterForm() {
 
   const onSubmit = (data: RegisterInput) => mutation.mutate(data)
 
-  // Success state
-  if (mutation.isSuccess) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-8"
-      >
-        <div className="mx-auto w-16 h-16 rounded-full bg-status-success-bg dark:bg-status-success-bg-dark flex items-center justify-center mb-4">
-          <CheckCircle className="h-8 w-8 text-status-success dark:text-status-success-dark" />
-        </div>
-        <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark mb-2">
-          ¡Cuenta creada!
-        </h3>
-        <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-6">
-          Te enviamos un email de verificación. Revisá tu bandeja de entrada para activar tu cuenta.
-        </p>
-        <Link to="/login">
-          <Button variant="primary" size="md">
-            Ir a iniciar sesión
-          </Button>
-        </Link>
-      </motion.div>
-    )
-  }
+  // Nota: ya no hay pantalla intermedia de "¡Cuenta creada!". El hook
+  // useRegister loguea al usuario y lo redirige al returnUrl directamente.
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -195,7 +178,7 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-text-secondary dark:text-text-secondary-dark">
         ¿Ya tenés cuenta?{' '}
-        <Link to="/login" className="text-accent hover:underline font-medium">
+        <Link to={loginHref} className="text-accent hover:underline font-medium">
           Iniciá sesión
         </Link>
       </p>

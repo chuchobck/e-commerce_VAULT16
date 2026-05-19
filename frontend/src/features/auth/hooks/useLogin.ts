@@ -21,13 +21,9 @@ export function useLogin() {
       navigate(returnUrl)
     },
     onError: (err: any) => {
-      const code = err?.response?.data?.error?.code
+      // Nota: ya no bloqueamos el login por EMAIL_NOT_VERIFIED. La rama
+      // especial fue removida; mostramos el mensaje del backend o un genérico.
       const msg = err?.response?.data?.error?.message
-
-      if (code === 'EMAIL_NOT_VERIFIED') {
-        error('Verificá tu email para continuar')
-        return
-      }
       error(msg || 'Credenciales incorrectas')
     },
   })

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
@@ -10,7 +10,14 @@ import { useLogin } from '@/features/auth/hooks/useLogin'
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
+  const [searchParams] = useSearchParams()
   const mutation = useLogin()
+
+  // Pasamos el returnUrl al link de registro para no perder el destino
+  const returnUrl = searchParams.get('returnUrl')
+  const registerHref = returnUrl
+    ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+    : '/register'
 
   const {
     register,
@@ -78,7 +85,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-text-secondary dark:text-text-secondary-dark">
         ¿No tenés cuenta?{' '}
-        <Link to="/register" className="text-accent hover:underline font-medium">
+        <Link to={registerHref} className="text-accent hover:underline font-medium">
           Registrate
         </Link>
       </p>

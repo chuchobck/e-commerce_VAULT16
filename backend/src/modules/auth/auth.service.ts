@@ -102,9 +102,9 @@ export async function loginCliente(
   if (!cliente) return credencialesInvalidas();
   if (cliente.estado !== 'ACT') return credencialesInvalidas();
 
-  if (!cliente.email_verificado) {
-    throw new ApiError(403, 'EMAIL_NOT_VERIFIED', 'Email no verificado');
-  }
+  // Nota: ya NO bloqueamos por email_verificado. El cliente puede iniciar
+  // sesión y comprar antes de verificar; el frontend muestra un banner
+  // recordándole verificar el email.
 
   const ok = await comparePassword(data.password, cliente.password_hash);
   if (!ok) return credencialesInvalidas();
@@ -132,6 +132,9 @@ export async function loginCliente(
       email: cliente.email,
       nombre1: cliente.nombre1,
       apellido1: cliente.apellido1,
+      ruc_cedula: cliente.ruc_cedula,
+      telefono: cliente.telefono,
+      email_verificado: cliente.email_verificado,
     },
     token,
   };
@@ -178,13 +181,24 @@ export async function registerCliente(data: RegisterClienteInput) {
     `[AUTH] Verificación email: GET /api/auth/verify-email/${tokenRow.id_token}`,
   );
 
+  // Firmar JWT igual que en login, así el cliente queda logueado al instante
+  // después del registro (y puede ir directo al checkout sin pasar por /login).
+  const token = signToken(
+    { id: cliente.id_cliente, email: cliente.email },
+    'cliente',
+  );
+
   return {
     cliente: {
       id_cliente: cliente.id_cliente,
       email: cliente.email,
       nombre1: cliente.nombre1,
       apellido1: cliente.apellido1,
+      ruc_cedula: cliente.ruc_cedula,
+      telefono: cliente.telefono,
+      email_verificado: cliente.email_verificado,
     },
+    token,
     message: 'Registro exitoso. Verificá tu email para activar la cuenta.',
   };
 }
