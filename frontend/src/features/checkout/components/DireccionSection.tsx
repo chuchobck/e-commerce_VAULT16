@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
@@ -21,6 +21,9 @@ interface DireccionSectionProps {
   selectedId: number | null
   onSelect: (id: number | null) => void
 }
+
+const NAME_REGEX = /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/
+const DIGITS_REGEX = /^\d*$/
 
 interface NewAddressFormData {
   alias: string
@@ -76,6 +79,20 @@ export const DireccionSection = forwardRef<DireccionSectionHandle, DireccionSect
         codigoPostal: '',
       },
     })
+
+    const handleNameInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.currentTarget.value
+      if (value && !NAME_REGEX.test(value)) {
+        e.currentTarget.value = value.replace(/[^a-záéíóúñA-ZÁÉÍÓÚÑ\s]/g, '')
+      }
+    }, [])
+
+    const handleDigitsInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.currentTarget.value
+      if (value && !DIGITS_REGEX.test(value)) {
+        e.currentTarget.value = value.replace(/[^\d]/g, '')
+      }
+    }, [])
 
     const createMutation = useMutation({
       mutationFn: (data: NewAddressFormData) => {
@@ -257,14 +274,22 @@ export const DireccionSection = forwardRef<DireccionSectionHandle, DireccionSect
                   placeholder="Juan Pérez"
                   error={errors.nombreDestinatario?.message}
                   fullWidth
-                  {...register('nombreDestinatario', { required: 'Requerido' })}
+                  onInput={handleNameInput}
+                  {...register('nombreDestinatario', {
+                    required: 'Requerido',
+                    pattern: { value: /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, message: 'Solo letras y espacios' },
+                  })}
                 />
                 <Input
                   label="Teléfono de contacto"
                   placeholder="0991234567"
                   error={errors.telefonoContacto?.message}
                   fullWidth
-                  {...register('telefonoContacto', { required: 'Requerido' })}
+                  onInput={handleDigitsInput}
+                  {...register('telefonoContacto', {
+                    required: 'Requerido',
+                    pattern: { value: /^\d{7,15}$/, message: 'Solo números (mín. 7 dígitos)' },
+                  })}
                 />
               </div>
 
@@ -273,7 +298,10 @@ export const DireccionSection = forwardRef<DireccionSectionHandle, DireccionSect
                 placeholder="Av. Principal N34-56 y Calle Secundaria"
                 error={errors.direccion?.message}
                 fullWidth
-                {...register('direccion', { required: 'Requerido' })}
+                {...register('direccion', {
+                  required: 'Requerido',
+                  minLength: { value: 5, message: 'Mínimo 5 caracteres' },
+                })}
               />
 
               <Input
@@ -289,22 +317,34 @@ export const DireccionSection = forwardRef<DireccionSectionHandle, DireccionSect
                   placeholder="Quito"
                   error={errors.ciudad?.message}
                   fullWidth
-                  {...register('ciudad', { required: 'Requerido' })}
+                  onInput={handleNameInput}
+                  {...register('ciudad', {
+                    required: 'Requerido',
+                    pattern: { value: /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, message: 'Solo letras y espacios' },
+                  })}
                 />
                 <Input
                   label="Provincia"
                   placeholder="Pichincha"
                   error={errors.provincia?.message}
                   fullWidth
-                  {...register('provincia', { required: 'Requerido' })}
+                  onInput={handleNameInput}
+                  {...register('provincia', {
+                    required: 'Requerido',
+                    pattern: { value: /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, message: 'Solo letras y espacios' },
+                  })}
                 />
               </div>
 
               <Input
                 label="Código postal (opcional)"
                 placeholder="170150"
+                error={errors.codigoPostal?.message}
                 fullWidth
-                {...register('codigoPostal')}
+                onInput={handleDigitsInput}
+                {...register('codigoPostal', {
+                  pattern: { value: /^\d{4,10}$/, message: 'Solo números (4-10 dígitos)' },
+                })}
               />
             </form>
           </motion.div>

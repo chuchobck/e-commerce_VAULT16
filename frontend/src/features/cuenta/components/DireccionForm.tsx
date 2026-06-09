@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Input } from '@/shared/components/ui/Input'
@@ -9,6 +10,10 @@ import {
   type DireccionInput,
 } from '@/features/cuenta/api/cuentaApi'
 import { useToast } from '@/shared/hooks/useToast'
+
+// ─── Regex compiladas ────────────────────────────────────────────────────────
+const NAME_REGEX = /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/
+const PHONE_REGEX = /^\d*$/
 
 interface DireccionFormData {
   alias: string
@@ -49,6 +54,24 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
       esPrincipal: direccion?.esPrincipal || false,
     },
   })
+
+  // ─── Handlers eficientes para validación en tiempo real ───────────────────
+  
+  // Handler para nombre del destinatario: solo letras y espacios
+  const handleNameInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    if (value && !NAME_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^a-záéíóúñA-ZÁÉÍÓÚÑ\s]/g, '')
+    }
+  }, [])
+
+  // Handler para teléfono: solo números
+  const handlePhoneInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    if (value && !PHONE_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^\d]/g, '')
+    }
+  }, [])
 
   const mutation = useMutation({
     mutationFn: (data: DireccionFormData) => {
@@ -100,6 +123,7 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
           placeholder="Juan Pérez"
           error={errors.nombreDestinatario?.message}
           fullWidth
+          onInput={handleNameInput}
           {...register('nombreDestinatario', { required: 'Requerido' })}
         />
         <Input
@@ -107,6 +131,7 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
           placeholder="0991234567"
           error={errors.telefonoContacto?.message}
           fullWidth
+          onInput={handlePhoneInput}
           {...register('telefonoContacto', { required: 'Requerido' })}
         />
       </div>
@@ -132,22 +157,34 @@ export function DireccionForm({ direccion, onClose }: DireccionFormProps) {
           placeholder="Quito"
           error={errors.ciudad?.message}
           fullWidth
-          {...register('ciudad', { required: 'Requerido' })}
+          onInput={handleNameInput}
+          {...register('ciudad', {
+            required: 'Requerido',
+            pattern: { value: /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, message: 'Solo letras y espacios' },
+          })}
         />
         <Input
           label="Provincia"
           placeholder="Pichincha"
           error={errors.provincia?.message}
           fullWidth
-          {...register('provincia', { required: 'Requerido' })}
+          onInput={handleNameInput}
+          {...register('provincia', {
+            required: 'Requerido',
+            pattern: { value: /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, message: 'Solo letras y espacios' },
+          })}
         />
       </div>
 
       <Input
         label="Código postal (opcional)"
         placeholder="170150"
+        error={errors.codigoPostal?.message}
         fullWidth
-        {...register('codigoPostal')}
+        onInput={handlePhoneInput}
+        {...register('codigoPostal', {
+          pattern: { value: /^\d{4,10}$/, message: 'Solo números (4-10 dígitos)' },
+        })}
       />
 
       <label className="flex items-center gap-2 cursor-pointer">

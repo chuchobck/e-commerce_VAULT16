@@ -312,7 +312,8 @@ export interface RawDetalleFactura {
   id_detalle?: number
   cantidad: number
   precio_unitario: string | number
-  subtotal: string | number
+  subtotal_linea: string | number
+  subtotal?: string | number
   variante_producto?: {
     id_variante: number
     sku: string
@@ -341,6 +342,7 @@ export interface PedidoResumenMapped {
 
 export interface PedidoItemMapped {
   id: number
+  varianteId: number
   productoNombre: string
   talla: string
   color: string
@@ -397,12 +399,13 @@ export function mapPedido(raw: RawFacturaFull): PedidoMapped {
     total: toNumber(raw.total),
     items: (raw.detalle_factura ?? []).map((d, i) => ({
       id: d.id_detalle ?? i,
+      varianteId: d.variante_producto?.id_variante ?? 0,
       productoNombre: d.variante_producto?.producto?.nombre ?? 'Producto',
       talla: d.variante_producto?.talla?.descripcion ?? '',
       color: d.variante_producto?.color ?? '',
       cantidad: d.cantidad,
       precioUnitario: toNumber(d.precio_unitario),
-      subtotal: toNumber(d.subtotal),
+      subtotal: toNumber(d.subtotal_linea ?? d.subtotal ?? 0),
       imagen: d.variante_producto?.producto?.producto_fotos?.[0]?.url_foto ?? '',
     })),
     direccionEnvio: raw.direccion_cliente
@@ -562,7 +565,7 @@ export function mapConfirmacionPedido(raw: RawFacturaFull): ConfirmacionPedidoMa
       color: d.variante_producto?.color ?? '',
       cantidad: d.cantidad,
       precioUnitario: toNumber(d.precio_unitario),
-      subtotal: toNumber(d.subtotal),
+      subtotal: toNumber(d.subtotal_linea ?? d.subtotal ?? 0),
     })),
   }
 }

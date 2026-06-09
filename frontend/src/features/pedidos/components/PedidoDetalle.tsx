@@ -1,7 +1,16 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { RotateCcw } from 'lucide-react'
 import { EstadoTimeline } from './EstadoTimeline'
 import type { Pedido } from '@/features/pedidos/api/pedidosApi'
+import { addItem } from '@/features/carrito/api/carritoApi'
+import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
+import { useUIStore } from '@/shared/stores/uiStore'
+import { useToast } from '@/shared/hooks/useToast'
+import { Button } from '@/shared/components/ui/Button'
+
+const ESTADOS_EXITOSOS = new Set(['PAG', 'ENT'])
 
 interface PedidoDetalleProps {
   pedido: Pedido
@@ -9,15 +18,56 @@ interface PedidoDetalleProps {
 
 export function PedidoDetalle({ pedido }: PedidoDetalleProps) {
   const fecha = format(new Date(pedido.fecha), "d 'de' MMMM yyyy, HH:mm", { locale: es })
+  const [isRepeating, setIsRepeating] = useState(false)
+  const setItems = useCarritoStore((s) => s.setItems)
+  const openCartDrawer = useUIStore((s) => s.openCartDrawer)
+  const { success, error } = useToast()
+
+  const handleRepetirPedido = async () => {
+    setIsRepeating(true)
+    let lastResult = null
+    let errCount = 0
+    for (const item of pedido.items) {
+      if (!item.varianteId) continue
+      try {
+        lastResult = await addItem({ id_variante: item.varianteId, cantidad: item.cantidad })
+      } catch {
+        errCount++
+      }
+    }
+    if (lastResult) setItems(lastResult)
+    setIsRepeating(false)
+    if (errCount === 0) {
+      success('Productos agregados al carrito')
+    } else if (errCount < pedido.items.length) {
+      success(`Algunos productos no estaban disponibles (${errCount} sin stock)`)
+    } else {
+      error('No se pudo agregar ningún producto al carrito')
+    }
+    openCartDrawer()
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">
-          Pedido {pedido.idFactura}
-        </h3>
-        <p className="text-sm text-text-muted dark:text-text-muted-dark">{fecha}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">
+            Pedido {pedido.idFactura}
+          </h3>
+          <p className="text-sm text-text-muted dark:text-text-muted-dark">{fecha}</p>
+        </div>
+        {ESTADOS_EXITOSOS.has(pedido.estado) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRepetirPedido}
+            loading={isRepeating}
+          >
+            <RotateCcw className="h-4 w-4 mr-1.5" />
+            Repetir pedido
+          </Button>
+        )}
       </div>
 
       {/* Timeline */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,6 +7,10 @@ import { Input } from '@/shared/components/ui/Input'
 import { Button } from '@/shared/components/ui/Button'
 import { RegisterSchema, type RegisterInput } from '@/features/auth/schemas/auth.schemas'
 import { useRegister } from '@/features/auth/hooks/useRegister'
+
+// ─── Regex compiladas (evita compilación en cada render) ───────────────────
+const NAME_REGEX = /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/
+const PHONE_REGEX = /^\d*$/
 
 function PasswordRules({ password }: { password: string }) {
   const rules = [
@@ -40,9 +44,12 @@ export function RegisterForm() {
 
   // Preserve returnUrl so the link back to /login no pierde el contexto
   const returnUrl = searchParams.get('returnUrl')
-  const loginHref = returnUrl
-    ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
-    : '/login'
+  const loginHref = useMemo(() =>
+    returnUrl
+      ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+      : '/login',
+    [returnUrl]
+  )
 
   const {
     register,
@@ -56,10 +63,27 @@ export function RegisterForm() {
 
   const password = watch('password') || ''
 
-  const onSubmit = (data: RegisterInput) => mutation.mutate(data)
+  // ─── Handlers eficientes para validación en tiempo real ───────────────────
+  
+  // Handler para nombre: bloquea caracteres inválidos en tiempo de entrada
+  const handleNameInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    // Si el carácter NO coincide con el regex, no lo permitimos
+    if (value && !NAME_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^a-záéíóúñA-ZÁÉÍÓÚÑ\s]/g, '')
+    }
+  }, [])
 
-  // Nota: ya no hay pantalla intermedia de "¡Cuenta creada!". El hook
-  // useRegister loguea al usuario y lo redirige al returnUrl directamente.
+  // Handler para teléfono: bloquea caracteres no numéricos en tiempo de entrada
+  const handlePhoneInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    // Si el carácter NO es número, no lo permitimos
+    if (value && !PHONE_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^\d]/g, '')
+    }
+  }, [])
+
+  const onSubmit = (data: RegisterInput) => mutation.mutate(data)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -72,6 +96,7 @@ export function RegisterForm() {
           error={errors.nombre1?.message}
           fullWidth
           autoComplete="given-name"
+          onInput={handleNameInput}
           {...register('nombre1')}
         />
         <Input
@@ -82,6 +107,7 @@ export function RegisterForm() {
           error={errors.apellido1?.message}
           fullWidth
           autoComplete="family-name"
+          onInput={handleNameInput}
           {...register('apellido1')}
         />
       </div>
@@ -93,6 +119,7 @@ export function RegisterForm() {
         leftIcon={<FileText className="h-4 w-4" />}
         error={errors.rucCedula?.message}
         fullWidth
+        onInput={handlePhoneInput}
         {...register('rucCedula')}
       />
 
@@ -110,11 +137,12 @@ export function RegisterForm() {
       <Input
         label="Teléfono (opcional)"
         type="tel"
-        placeholder="+593 99 123 4567"
+        placeholder="0991234567"
         leftIcon={<Phone className="h-4 w-4" />}
         error={errors.telefono?.message}
         fullWidth
         autoComplete="tel"
+        onInput={handlePhoneInput}
         {...register('telefono')}
       />
 
