@@ -1,4 +1,4 @@
-import { prisma } from '@/config/prisma';
+import { prisma } from '../../config/prisma';
 
 /**
  * Devuelve el porcentaje de descuento vigente más alto para un producto.

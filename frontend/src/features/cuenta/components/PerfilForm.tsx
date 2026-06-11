@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import { User, Phone, Mail, FileText } from 'lucide-react'
@@ -6,6 +7,10 @@ import { Button } from '@/shared/components/ui/Button'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { updateProfile } from '@/features/cuenta/api/cuentaApi'
 import { useToast } from '@/shared/hooks/useToast'
+
+// ─── Regex compiladas ────────────────────────────────────────────────────────
+const NAME_REGEX = /^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/
+const PHONE_REGEX = /^\d*$/
 
 interface ProfileFormData {
   nombre1: string
@@ -29,6 +34,24 @@ export function PerfilForm() {
       telefono: cliente?.telefono || '',
     },
   })
+
+  // ─── Handlers eficientes para validación en tiempo real ───────────────────
+  
+  // Handler para nombre: solo letras y espacios
+  const handleNameInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    if (value && !NAME_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^a-záéíóúñA-ZÁÉÍÓÚÑ\s]/g, '')
+    }
+  }, [])
+
+  // Handler para teléfono: solo números
+  const handlePhoneInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value
+    if (value && !PHONE_REGEX.test(value)) {
+      e.currentTarget.value = value.replace(/[^\d]/g, '')
+    }
+  }, [])
 
   const mutation = useMutation({
     mutationFn: (data: ProfileFormData) => updateProfile(data),
@@ -74,6 +97,7 @@ export function PerfilForm() {
           leftIcon={<User className="h-4 w-4" />}
           error={errors.nombre1?.message}
           fullWidth
+          onInput={handleNameInput}
           {...register('nombre1', { required: 'Requerido' })}
         />
         <Input
@@ -83,6 +107,7 @@ export function PerfilForm() {
           leftIcon={<User className="h-4 w-4" />}
           error={errors.apellido1?.message}
           fullWidth
+          onInput={handleNameInput}
           {...register('apellido1', { required: 'Requerido' })}
         />
       </div>
@@ -90,10 +115,11 @@ export function PerfilForm() {
       <Input
         label="Teléfono"
         type="tel"
-        placeholder="+593 99 123 4567"
+        placeholder="0991234567"
         leftIcon={<Phone className="h-4 w-4" />}
         error={errors.telefono?.message}
         fullWidth
+        onInput={handlePhoneInput}
         {...register('telefono')}
       />
 

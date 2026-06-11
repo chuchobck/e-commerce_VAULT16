@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/config/prisma';
-import { NotFoundError } from '@/shared/utils/errors';
+import { prisma } from '../../config/prisma';
+import { NotFoundError } from '../../shared/utils/errors';
 import {
   ListMovimientosQueryInput,
   StockActualQueryInput,

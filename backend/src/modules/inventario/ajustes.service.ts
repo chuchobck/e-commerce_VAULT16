@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError, UnauthorizedError } from '@/shared/utils/errors';
-import { registrarAudit } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError, UnauthorizedError } from '../../shared/utils/errors';
+import { registrarAudit } from '../../shared/utils/audit';
 import {
   CreateAjusteInput,
   AnularAjusteInput,

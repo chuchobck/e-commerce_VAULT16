@@ -1,6 +1,6 @@
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError } from '@/shared/utils/errors';
-import { getDescuentoActivoProducto } from '@/shared/utils/promocionesHelper';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError } from '../../shared/utils/errors';
+import { getDescuentoActivoProducto } from '../../shared/utils/promocionesHelper';
 import { AgregarItemInput, ActualizarCantidadInput } from './carrito.schemas';
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────

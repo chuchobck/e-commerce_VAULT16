@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { authBackoffice } from '@/middleware/authBackoffice';
-import { authCliente } from '@/middleware/authCliente';
-import { requireRole } from '@/middleware/requireRole';
-import { validateRequest } from '@/middleware/validateRequest';
+import { authBackoffice } from '../../middleware/authBackoffice';
+import { authCliente } from '../../middleware/authCliente';
+import { requireRole } from '../../middleware/requireRole';
+import { validateRequest } from '../../middleware/validateRequest';
 import {
   ListClienteQuerySchema,
   UpdateClienteSchema,

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCarrito } from '@/features/carrito/api/carritoApi'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
+import { useAuthStore } from '@/shared/stores/authStore'
 
 /**
  * Sync carrito from backend when authenticated.
@@ -11,8 +12,8 @@ export function useCarrito() {
   const setItems = useCarritoStore((s) => s.setItems)
   const setLoading = useCarritoStore((s) => s.setLoading)
 
-  // Check if token exists (lightweight check — no auth store dependency)
-  const isAuthenticated = !!localStorage.getItem('vault16_token')
+  // Reactivo al Zustand store: se re-evalúa cuando el interceptor 401 hace logout.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const query = useQuery({
     queryKey: ['carrito'],

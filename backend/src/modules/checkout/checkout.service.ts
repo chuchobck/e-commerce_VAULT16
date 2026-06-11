@@ -1,10 +1,10 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError, ForbiddenError } from '@/shared/utils/errors';
-import { registrarAudit } from '@/shared/utils/audit';
-import { getDescuentoActivoProducto } from '@/shared/utils/promocionesHelper';
-import { generarIdFactura } from '@/shared/utils/facturaNumber';
-import { createOrder, captureOrder } from '@/modules/pagos/paypal.service';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError, ForbiddenError } from '../../shared/utils/errors';
+import { registrarAudit } from '../../shared/utils/audit';
+import { getDescuentoActivoProducto } from '../../shared/utils/promocionesHelper';
+import { generarIdFactura } from '../../shared/utils/facturaNumber';
+import { createOrder, captureOrder } from '../pagos/paypal.service';
 import {
   PreviewInput,
   IniciarPagoInput,

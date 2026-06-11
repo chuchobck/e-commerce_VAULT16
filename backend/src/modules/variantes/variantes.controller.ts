@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './variantes.service';
-import { getAuditContext } from '@/shared/utils/auditContext';
+import { getAuditContext } from '../../shared/utils/auditContext';
 
 // GET /api/productos/:id/variantes
 export async function getByProducto(req: Request, res: Response, next: NextFunction) {

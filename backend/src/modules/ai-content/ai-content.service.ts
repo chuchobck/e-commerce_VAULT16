@@ -1,8 +1,8 @@
-import { prisma } from '@/config/prisma';
-import { anthropic, ANTHROPIC_STUB_MODE } from '@/config/anthropic';
-import { voyage, VOYAGE_STUB_MODE } from '@/config/voyage';
-import { NotFoundError, ApiError } from '@/shared/utils/errors';
-import { registrarAudit } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { anthropic, ANTHROPIC_STUB_MODE } from '../../config/anthropic';
+import { voyage, VOYAGE_STUB_MODE } from '../../config/voyage';
+import { NotFoundError, ApiError } from '../../shared/utils/errors';
+import { registrarAudit } from '../../shared/utils/audit';
 import { ProductoContext, PROMPT_DESCRIPCION_PRODUCTO_V1 } from './prompts';
 
 // ─── Carga contexto del producto para IA ─────────────────────────────────────

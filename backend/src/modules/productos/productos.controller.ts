@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as service from './productos.service';
 import * as fotosService from './fotos.service';
 import { ListProductoQuerySchema } from './productos.schemas';
-import { getAuditContext } from '@/shared/utils/auditContext';
+import { getAuditContext } from '../../shared/utils/auditContext';
 
 export async function getAll(req: Request, res: Response, next: NextFunction) {
   try {

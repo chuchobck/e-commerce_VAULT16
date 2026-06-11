@@ -18,11 +18,13 @@ import { ResumenOrden } from '@/features/checkout/components/ResumenOrden'
 import { validarCarrito, type CheckoutValidacion } from '@/features/checkout/api/checkoutApi'
 import { getDirecciones, type Direccion } from '@/features/cuenta/api/cuentaApi'
 import { useCarritoStore } from '@/features/carrito/stores/carritoStore'
+import { useAuthStore } from '@/shared/stores/authStore'
 
 export function CheckoutPage() {
   const navigate = useNavigate()
   const items = useCarritoStore((s) => s.items)
   const getTotal = useCarritoStore((s) => s.getTotal)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const { direccionId, setDireccion, setMetodoPago, setIdFactura } = useCheckout()
   const openCartDrawer = useUIStore((s) => s.openCartDrawer)
@@ -62,12 +64,14 @@ export function CheckoutPage() {
       setValidationErrors(result.valid ? [] : result.errors)
       return result
     },
+    enabled: isAuthenticated,
     staleTime: 0,
   })
 
   const { data: direcciones = [] } = useQuery({
     queryKey: ['direcciones'],
     queryFn: getDirecciones,
+    enabled: isAuthenticated,
   })
 
   const selectedDir = direcciones.find((d: Direccion) => d.id === direccionId)

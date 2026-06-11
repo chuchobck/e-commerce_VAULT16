@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './promociones.service';
-import { getAuditContext } from '@/shared/utils/auditContext';
+import { getAuditContext } from '../../shared/utils/auditContext';
 
 export async function getVigentes(_req: Request, res: Response, next: NextFunction) {
   try {

@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 import path from 'path';
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError } from '@/shared/utils/errors';
-import { uploadFile, deleteFile, extractBlobName } from '@/shared/utils/azureBlob';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError } from '../../shared/utils/errors';
+import { uploadFile, deleteFile, extractBlobName } from '../../shared/utils/azureBlob';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 

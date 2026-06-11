@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './assistant.service';
 import { ChatMensajeSchema, ListSesionesQuerySchema } from './assistant.schemas';
-import { BadRequestError } from '@/shared/utils/errors';
+import { BadRequestError } from '../../shared/utils/errors';
 
 // ─── POST /api/assistant/chat (SSE) ──────────────────────────────────────────
 

@@ -1,6 +1,6 @@
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError } from '@/shared/utils/errors';
-import { registrarAudit, AuditParams } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError } from '../../shared/utils/errors';
+import { registrarAudit, AuditParams } from '../../shared/utils/audit';
 import { CreateVarianteInput, UpdateVarianteInput } from './variantes.schemas';
 
 type AuditCtx = Pick<AuditParams, 'id_usuario_bo' | 'ip' | 'user_agent'>;

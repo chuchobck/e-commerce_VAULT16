@@ -4,6 +4,12 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { PayPalScriptProvider } from '@paypal/react-paypal-js'
 import { queryClient } from '@/shared/lib/queryClient'
 import { useUIStore } from '@/shared/stores/uiStore'
+import { registerLogoutHandler } from '@/shared/lib/api'
+import { useAuthStore } from '@/shared/stores/authStore'
+
+// Wire up once at module init: el interceptor 401 llamará logout() del store,
+// actualizando la memoria Zustand en lugar de manipular localStorage a mano.
+registerLogoutHandler(() => useAuthStore.getState().logout())
 
 function ThemeSync() {
   const isDark = useUIStore((s) => s.isDark)

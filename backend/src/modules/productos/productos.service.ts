@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError } from '@/shared/utils/errors';
-import { registrarAudit, AuditParams } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError } from '../../shared/utils/errors';
+import { registrarAudit, AuditParams } from '../../shared/utils/audit';
 import {
   CreateProductoInput,
   UpdateProductoInput,

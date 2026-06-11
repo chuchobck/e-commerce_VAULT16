@@ -1,4 +1,4 @@
-import { prisma } from '@/config/prisma';
+import { prisma } from '../../config/prisma';
 import type { Prisma } from '@prisma/client';
 
 type TxClient = Prisma.TransactionClient;
@@ -18,15 +18,20 @@ type TxClient = Prisma.TransactionClient;
 export async function generarIdFactura(tx?: TxClient): Promise<string> {
   const client = tx ?? (prisma as unknown as TxClient);
 
-  const rows = await client.$queryRaw<[{ max_num: string | null }]>`
-    SELECT MAX(SUBSTRING(id_factura FROM 9)) AS max_num
+  // FOR UPDATE con MAX() no está permitido en PostgreSQL.
+  // Usamos ORDER BY + LIMIT 1 para obtener el último id y bloquearlo.
+  const rows = await client.$queryRaw<[{ id_factura: string }]>`
+    SELECT id_factura
     FROM vortex.factura
     WHERE id_factura LIKE '001-001-%'
+    ORDER BY id_factura DESC
+    LIMIT 1
     FOR UPDATE
   `;
 
-  const maxStr = rows[0]?.max_num;
-  const nextNum = maxStr ? parseInt(maxStr, 10) + 1 : 1;
+  const lastId = rows[0]?.id_factura ?? null;
+  const lastNum = lastId ? parseInt(lastId.substring(8), 10) : 0;
+  const nextNum = lastNum + 1;
   const seq = String(nextNum).padStart(9, '0');
   return `001-001-${seq}`;
 }

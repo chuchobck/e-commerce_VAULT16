@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './clientes.service';
-import { getAuditContext } from '@/shared/utils/auditContext';
+import { getAuditContext } from '../../shared/utils/auditContext';
 
 export async function getAll(req: Request, res: Response, next: NextFunction) {
   try {

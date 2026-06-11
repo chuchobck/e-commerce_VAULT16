@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as service from './facturas.service';
-import { getAuditContext } from '@/shared/utils/auditContext';
+import { getAuditContext } from '../../shared/utils/auditContext';
 import {
   ListFacturasQuerySchema,
   ListFacturasMeQuerySchema,

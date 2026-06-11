@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authCliente } from '@/middleware/authCliente';
-import { validateRequest } from '@/middleware/validateRequest';
+import { authCliente } from '../../middleware/authCliente';
+import { validateRequest } from '../../middleware/validateRequest';
 import {
   PreviewSchema,
   IniciarPagoSchema,

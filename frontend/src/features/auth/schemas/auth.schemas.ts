@@ -33,14 +33,18 @@ export const RegisterSchema = z.object({
   nombre1: z
     .string()
     .min(1, 'El nombre es requerido')
-    .max(100, 'Máximo 100 caracteres'),
+    .max(100, 'Máximo 100 caracteres')
+    .regex(/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, 'El nombre solo debe contener letras y espacios'),
   apellido1: z
     .string()
     .min(1, 'El apellido es requerido')
-    .max(100, 'Máximo 100 caracteres'),
+    .max(100, 'Máximo 100 caracteres')
+    .regex(/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]+$/, 'El apellido solo debe contener letras y espacios'),
   telefono: z
     .string()
-    .optional(),
+    .regex(/^\d*$/, 'El teléfono solo debe contener números')
+    .optional()
+    .or(z.literal('')),
   acceptTerms: z
     .literal(true, { errorMap: () => ({ message: 'Debés aceptar los términos' }) }),
 })

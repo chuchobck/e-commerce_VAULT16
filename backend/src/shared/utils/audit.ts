@@ -1,4 +1,4 @@
-import { prisma } from '@/config/prisma';
+import { prisma } from '../../config/prisma';
 
 export type AuditAccion = 'INSERT' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT';
 

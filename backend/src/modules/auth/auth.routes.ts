@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { validateRequest } from '@/middleware/validateRequest';
-import { authRateLimit } from '@/middleware/rateLimit';
+import { validateRequest } from '../../middleware/validateRequest';
+import { authRateLimit } from '../../middleware/rateLimit';
 import {
   LoginBackofficeSchema,
   LoginClienteSchema,

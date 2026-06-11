@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Suspense, lazy, useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { EcommerceLayout } from '@/shared/components/layout/EcommerceLayout'
 import { AuthLayout } from '@/shared/components/layout/AuthLayout'
 import { CheckoutLayout } from '@/shared/components/layout/CheckoutLayout'
@@ -101,11 +101,21 @@ function SuspensePage({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname])
+  return null
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export function AppRouter() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* ── Rutas con layout principal (Header + Footer) ───────────────── */}
       <Route element={<EcommerceLayout />}>
         <Route path="/" element={<SuspensePage><HomePage /></SuspensePage>} />
@@ -171,5 +181,6 @@ export function AppRouter() {
         <Route path="/reset-password/:token" element={<SuspensePage><ResetPasswordPage /></SuspensePage>} />
       </Route>
     </Routes>
+    </>
   )
 }

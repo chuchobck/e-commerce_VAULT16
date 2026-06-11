@@ -1,7 +1,7 @@
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError, UnauthorizedError } from '@/shared/utils/errors';
-import { registrarAudit, AuditParams } from '@/shared/utils/audit';
-import { comparePassword, hashPassword } from '@/shared/utils/password';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError, UnauthorizedError } from '../../shared/utils/errors';
+import { registrarAudit, AuditParams } from '../../shared/utils/audit';
+import { comparePassword, hashPassword } from '../../shared/utils/password';
 import {
   UpdateClienteInput,
   UpdatePasswordClienteInput,

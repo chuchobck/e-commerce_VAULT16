@@ -5,11 +5,15 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
     "start": "node dist/server.js",
     "prisma:pull": "prisma db pull",
     "prisma:generate": "prisma generate",
     "check:contracts": "NODE_PATH=./node_modules tsx ../tools/contract-check/run.ts"
+  },
+  "_moduleAliases": {
+    "@": "src"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
@@ -22,6 +26,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "8.0.0",
     "jsonwebtoken": "9.0.2",
+    "module-alias": "^2.2.2",
     "morgan": "1.10.0",
     "multer": "1.4.5-lts.1",
     "voyageai": "0.0.3",

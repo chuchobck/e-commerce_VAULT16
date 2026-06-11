@@ -23,10 +23,22 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
+const allowedOrigins = [
+  ...new Set([
+    ...env.CORS_ORIGINS.split(',').map((o) => o.trim()),
+    env.FRONTEND_URL,
+  ]),
+].filter(Boolean);
+
 app.use(
-  /^\/api\/v1\//,
-  cors({ origin: allowedOrigins, credentials: true }),
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`Origen no permitido: ${origin}`));
+    },
+    credentials: true,
+  }),
 );
 
 // ── Parsers ──────────────────────────────────────────────────────────────────
@@ -70,6 +82,10 @@ app.get('/health', async (_req, res) => {
 
 // ── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/v1', apiRouter);
+
+app.get('/', (_req, res) => {
+  res.json({ success: true, message: 'Backend funcionando', api: '/api/v1' })
+});
 
 // ── Fallbacks ────────────────────────────────────────────────────────────────
 app.use(notFound);

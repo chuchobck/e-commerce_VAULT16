@@ -1,3 +1,8 @@
+import 'module-alias/register';
+import { addAliases } from 'module-alias';
+
+addAliases({ '@': __dirname });
+
 import { app } from './app';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
@@ -29,4 +34,8 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-bootstrap();
+if (process.env.VERCEL !== '1') {
+  bootstrap();
+}
+
+export default app;

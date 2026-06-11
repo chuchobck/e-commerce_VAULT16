@@ -1,14 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authBackoffice } from '@/middleware/authBackoffice';
-import { authCliente } from '@/middleware/authCliente';
-import { requireRole } from '@/middleware/requireRole';
-import { validateRequest } from '@/middleware/validateRequest';
+import { authBackoffice } from '../../middleware/authBackoffice';
+import { authCliente } from '../../middleware/authCliente';
+import { requireRole } from '../../middleware/requireRole';
+import { validateRequest } from '../../middleware/validateRequest';
 import * as controller from './pagos.controller';
 import {
   IniciarPagoSchema,
   CapturarPayPalSchema,
-} from '@/modules/checkout/checkout.schemas';
-import * as checkoutService from '@/modules/checkout/checkout.service';
+} from '../checkout/checkout.schemas';
+import * as checkoutService from '../checkout/checkout.service';
 
 export const pagosRouter = Router();
 

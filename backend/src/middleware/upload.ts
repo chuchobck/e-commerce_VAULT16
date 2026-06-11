@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { BadRequestError } from '@/shared/utils/errors';
+import { BadRequestError } from '../shared/utils/errors';
 
 export const uploadFoto = multer({
   storage: multer.memoryStorage(),

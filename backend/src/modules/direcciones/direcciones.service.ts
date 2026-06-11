@@ -1,6 +1,6 @@
-import { prisma } from '@/config/prisma';
-import { NotFoundError } from '@/shared/utils/errors';
-import { registrarAudit, AuditParams } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { NotFoundError } from '../../shared/utils/errors';
+import { registrarAudit, AuditParams } from '../../shared/utils/audit';
 import { CreateDireccionInput, UpdateDireccionInput } from './direcciones.schemas';
 
 type AuditCtx = Pick<AuditParams, 'id_usuario_bo' | 'id_cliente' | 'ip' | 'user_agent'>;

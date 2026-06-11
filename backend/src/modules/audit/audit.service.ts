@@ -1,4 +1,4 @@
-import { prisma } from '@/config/prisma';
+import { prisma } from '../../config/prisma';
 import { ListAuditQueryInput } from './audit.schemas';
 
 export async function findAll(query: ListAuditQueryInput) {

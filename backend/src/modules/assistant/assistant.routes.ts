@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authCliente } from '@/middleware/authCliente';
-import { authBackoffice } from '@/middleware/authBackoffice';
-import { requireRole } from '@/middleware/requireRole';
-import { chatRateLimit } from '@/middleware/rateLimit';
-import { verifyToken } from '@/shared/utils/jwt';
+import { authCliente } from '../../middleware/authCliente';
+import { authBackoffice } from '../../middleware/authBackoffice';
+import { requireRole } from '../../middleware/requireRole';
+import { chatRateLimit } from '../../middleware/rateLimit';
+import { verifyToken } from '../../shared/utils/jwt';
 import * as controller from './assistant.controller';
 
 // ─── Middleware de auth opcional para clientes ────────────────────────────────

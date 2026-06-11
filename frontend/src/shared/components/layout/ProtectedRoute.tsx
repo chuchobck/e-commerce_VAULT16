@@ -18,7 +18,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation()
 
   if (!isAuthenticated) {
-    const returnUrl = encodeURIComponent(location.pathname + location.search)
+    const returnUrl = encodeURIComponent(location.pathname)
     return <Navigate to={`/login?returnUrl=${returnUrl}`} replace />
   }
 

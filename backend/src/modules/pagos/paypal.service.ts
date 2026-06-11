@@ -1,4 +1,4 @@
-import { PAYPAL_API_BASE, PAYPAL_STUB_MODE, getPayPalAccessToken } from '@/config/paypal';
+import { PAYPAL_API_BASE, PAYPAL_STUB_MODE, getPayPalAccessToken } from '../../config/paypal';
 
 export interface PayPalCreateOrderResult {
   id: string;

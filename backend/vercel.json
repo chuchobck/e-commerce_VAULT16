@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/server.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/server.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "buildEnv": [
+    "JWT_SECRET",
+    "DATABASE_URL",
+    "JWT_EXPIRES_IN",
+    "ANTHROPIC_API_KEY",
+    "VOYAGE_API_KEY",
+    "AZURE_STORAGE_CONNECTION_STRING",
+    "AZURE_BLOB_CONTAINER",
+    "PAYPAL_CLIENT_ID",
+    "PAYPAL_CLIENT_SECRET",
+    "PAYPAL_MODE",
+    "FRONTEND_URL",
+    "CORS_ORIGINS"
+  ]
+}

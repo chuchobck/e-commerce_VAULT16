@@ -36,3 +36,5 @@ prisma/*.sqlite3
 tmp/
 temp/
 *.tmp
+.vercel
+.env*.local

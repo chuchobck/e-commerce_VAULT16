@@ -53,9 +53,9 @@ export function AuthLayout() {
         </Link>
 
         {/* Card */}
-        <div className="bg-bg-surface dark:bg-bg-surface-dark rounded-xl shadow-modal dark:shadow-modal-dark border border-border-base dark:border-border-base-dark p-6 sm:p-8">
+        <main className="bg-bg-surface dark:bg-bg-surface-dark rounded-xl shadow-modal dark:shadow-modal-dark border border-border-base dark:border-border-base-dark p-6 sm:p-8">
           <Outlet />
-        </div>
+        </main>
       </motion.div>
     </div>
   )

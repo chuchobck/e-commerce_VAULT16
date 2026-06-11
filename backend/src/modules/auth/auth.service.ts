@@ -1,13 +1,13 @@
-import { prisma } from '@/config/prisma';
-import { signToken } from '@/shared/utils/jwt';
-import { hashPassword, comparePassword } from '@/shared/utils/password';
-import { registrarAudit } from '@/shared/utils/audit';
+import { prisma } from '../../config/prisma';
+import { signToken } from '../../shared/utils/jwt';
+import { hashPassword, comparePassword } from '../../shared/utils/password';
+import { registrarAudit } from '../../shared/utils/audit';
 import {
   ApiError,
   UnauthorizedError,
   ConflictError,
   NotFoundError,
-} from '@/shared/utils/errors';
+} from '../../shared/utils/errors';
 import type {
   LoginBackofficeInput,
   LoginClienteInput,

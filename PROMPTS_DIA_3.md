@@ -1191,12 +1191,12 @@ ARCHIVOS:
 VALIDACIÓN:
 - Flujo completo: carrito → checkout → dirección → pago → confirmación
 - Con Stripe stub: el flujo termina sin errores
-- Si stock se acabó entre carrito y checkout: error claro + opción de quitar item
-- Edge case: usuario hace back, no se duplica orden
-- Email de confirmación (TODO backend, por ahora solo console)
-```
+                                                - Si stock se acabó entre carrito y checkout: error claro + opción de quitar item
+                                                - Edge case: usuario hace back, no se duplica orden
+                                                - Email de confirmación (TODO backend, por ahora solo console)
+                                                ```
 
----
+                                                ---
 
 ## 🟢 PROMPT 25 — Promociones + Páginas estáticas + Búsqueda
 

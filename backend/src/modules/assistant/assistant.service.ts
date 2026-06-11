@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { prisma } from '@/config/prisma';
-import { anthropic, ANTHROPIC_STUB_MODE } from '@/config/anthropic';
-import { generarEmbedding } from '@/modules/ai-content/ai-content.service';
+import { prisma } from '../../config/prisma';
+import { anthropic, ANTHROPIC_STUB_MODE } from '../../config/anthropic';
+import { generarEmbedding } from '../ai-content/ai-content.service';
 import { buscarProductosRelevantes, ProductoContextResult } from './search.service';
-import { NotFoundError, ForbiddenError } from '@/shared/utils/errors';
+import { NotFoundError, ForbiddenError } from '../../shared/utils/errors';
 import { ListSesionesQueryInput } from './assistant.schemas';
 
 // ─── System prompt del asistente ─────────────────────────────────────────────

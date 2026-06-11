@@ -1,7 +1,7 @@
-import { prisma } from '@/config/prisma';
-import { NotFoundError, ConflictError } from '@/shared/utils/errors';
-import { registrarAudit, AuditParams } from '@/shared/utils/audit';
-import { hashPassword } from '@/shared/utils/password';
+import { prisma } from '../../config/prisma';
+import { NotFoundError, ConflictError } from '../../shared/utils/errors';
+import { registrarAudit, AuditParams } from '../../shared/utils/audit';
+import { hashPassword } from '../../shared/utils/password';
 import { CreateEmpleadoInput, UpdateEmpleadoInput, UpdatePasswordInput } from './empleados.schemas';
 
 type AuditCtx = Pick<AuditParams, 'id_usuario_bo' | 'ip' | 'user_agent'>;
